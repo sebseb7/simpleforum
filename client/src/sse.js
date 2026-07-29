@@ -11,6 +11,9 @@ import {
   POSTS_PAGE_SIZE,
 } from './store/topicsSlice.js';
 import { applyStarOnPost } from './store/postsSlice.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('sse');
 
 let source = null;
 
@@ -24,7 +27,7 @@ export function startSse(store) {
       const msg = JSON.parse(event.data);
       handleEvent(store, msg);
     } catch (err) {
-      console.error('SSE parse error', err);
+      log.error('SSE parse error', err);
     }
   };
 

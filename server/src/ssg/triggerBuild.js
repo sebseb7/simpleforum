@@ -1,6 +1,9 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('ssg');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../../..');
@@ -20,7 +23,7 @@ function enabled() {
 function runBuild() {
   running = true;
   dirty = false;
-  console.log('SSG: starting npm run build…');
+  log.info('starting npm run build…');
   const child = spawn('npm', ['run', 'build'], {
     cwd: ROOT,
     env: { ...process.env, SSG_REBUILD: '0' }, // prevent nested rebuild triggers
@@ -29,7 +32,7 @@ function runBuild() {
   });
 
   child.on('error', (err) => {
-    console.error('SSG: build spawn failed', err);
+    log.error('build spawn failed', err);
     running = false;
     if (dirty) scheduleRebuild();
   });
@@ -37,9 +40,9 @@ function runBuild() {
   child.on('exit', (code) => {
     running = false;
     if (code === 0) {
-      console.log('SSG: build finished');
+      log.info('build finished');
     } else {
-      console.error(`SSG: build exited with code ${code}`);
+      log.error(`build exited with code ${code}`);
     }
     if (dirty) scheduleRebuild();
   });

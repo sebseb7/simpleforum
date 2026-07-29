@@ -5,6 +5,9 @@ import {
   signToken,
   publicUser,
 } from '../../auth.js';
+import { createLogger } from '../../logger.js';
+
+const log = createLogger('auth');
 
 export default function createGoogleAuthRouter(store) {
   const router = Router();
@@ -16,13 +19,13 @@ export default function createGoogleAuthRouter(store) {
         return res.status(400).json({ error: 'credential required' });
       }
       if (!process.env.GOOGLE_CLIENT_ID) {
-        console.error('GOOGLE_CLIENT_ID missing from process.env');
+        log.error('GOOGLE_CLIENT_ID missing from process.env');
         return res.status(503).json({ error: 'GOOGLE_CLIENT_ID not configured' });
       }
 
-      console.log('Verifying Google credential…');
+      log.info('Verifying Google credential…');
       const profile = await verifyGoogleIdToken(credential);
-      console.log(`Google auth OK for ${profile.email}`);
+      log.info(`Google auth OK for ${profile.email}`);
       const admins = getAdminEmails();
       const isAdmin = admins.includes(profile.email.toLowerCase()) ? 1 : 0;
 
@@ -45,7 +48,7 @@ export default function createGoogleAuthRouter(store) {
       const token = signToken(user);
       return res.json({ token, user: publicUser(user) });
     } catch (err) {
-      console.error('Google auth failed:', err.message);
+      log.error('Google auth failed:', err.message);
       return res.status(401).json({ error: 'Google authentication failed' });
     }
   });

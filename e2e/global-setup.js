@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createLogger } from '../server/src/logger.js';
+
+const log = createLogger('e2e');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, '../server/data');
@@ -16,5 +19,5 @@ export default async function globalSetup() {
       // ignore locked files from prior runs
     }
   }
-  console.log('[e2e] data dir ready', dataDir);
+  log.info('data dir ready', dataDir);
 }

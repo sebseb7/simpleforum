@@ -2,6 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
+import { createLogger } from './logger.js';
+
+const log = createLogger('db');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sqlDir = path.resolve(__dirname, '../sql');
@@ -29,7 +32,7 @@ function wrapStatement(stmt, label) {
     } finally {
       const ms = performance.now() - started;
       if (ms >= SLOW_SQL_MS) {
-        console.log(`slow sql ${ms.toFixed(2)}ms [${label}]`);
+        log.warn(`slow sql ${ms.toFixed(2)}ms [${label}]`);
       }
     }
   };

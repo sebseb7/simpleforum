@@ -8,6 +8,9 @@ import { materializeOgImage } from './pageMeta.js';
 import { jsonLdScriptTag, jsonLdTopic } from './jsonLd.js';
 import { writeSitemap } from './sitemap.js';
 import { materializeStateBodyImages } from './materializeBodyImages.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('ssg');
 
 function escapeHtml(str) {
   return String(str || '')
@@ -181,17 +184,25 @@ export async function prerenderAll(dbStore, opts = {}) {
   fs.rmSync(ssgCssDir, { recursive: true, force: true });
   fs.rmSync(path.join(distDir, 'media'), { recursive: true, force: true });
 
+  log.info(`prerender start (${paths.length} paths, lang=${SSG_LANG})`);
+
   for (const urlPath of paths) {
+    const t0 = Date.now();
     const { preloadedState, meta, notFound, ogImageSource, ogAssetKey, jsonLd } =
       loadPageData(dbStore, urlPath);
-    if (notFound) continue;
+    if (notFound) {
+      log.warn(`${urlPath}  skip=not-found`);
+      continue;
+    }
 
+    const hadOg = Boolean(ogImageSource);
     if (ogImageSource) {
       meta.image = materializeOgImage(distDir, ogAssetKey || 'image', ogImageSource);
     }
 
     // Extract data: images from bodies into /media/*.avif before SSR so HTML stays small.
-    await materializeStateBodyImages(distDir, preloadedState);
+    const mediaCount = await materializeStateBodyImages(distDir, preloadedState);
+    const images = mediaCount > 0 || hadOg ? 'yes' : 'no';
 
     // Rebuild topic JSON-LD after image materialization so `image` is always present.
     let finalJsonLd = jsonLd;
@@ -220,11 +231,16 @@ export async function prerenderAll(dbStore, opts = {}) {
     fs.mkdirSync(path.dirname(outFile), { recursive: true });
     fs.writeFileSync(outFile, page, 'utf8');
     written.push(urlPath);
+
+    const kb = (Buffer.byteLength(page, 'utf8') / 1024).toFixed(1);
+    log.info(
+      `${urlPath}  images=${images}  media=${mediaCount}  og=${hadOg ? 'yes' : 'no'}  ${kb}kb  ${Date.now() - t0}ms`,
+    );
   }
 
   const sitemapCount = writeSitemap(dbStore, distDir);
-  console.log(
-    `SSG: prerendered ${written.length} paths (${SSG_LANG}), sitemap ${sitemapCount} urls → ${distDir}`,
+  log.info(
+    `prerendered ${written.length} paths (${SSG_LANG}), sitemap ${sitemapCount} urls → ${distDir}`,
   );
   return written;
 }

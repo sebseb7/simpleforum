@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { getLinkPreview } from '../content/linkPreview.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('link-preview');
 
 export default function createLinkPreviewRouter() {
   const router = Router();
@@ -20,7 +23,7 @@ export default function createLinkPreviewRouter() {
       if (err?.code === 'blocked_host') {
         return res.status(400).json({ error: 'blocked_host' });
       }
-      console.error('link-preview failed', err);
+      log.error('link-preview failed', err);
       return res.status(502).json({ error: 'preview_failed' });
     }
   });

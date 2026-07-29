@@ -3,6 +3,9 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { openDatabase } from '../src/db.js';
 import { uniqueSlug } from '../../shared/slugify.js';
+import { createLogger } from '../src/logger.js';
+
+const log = createLogger('seed');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
@@ -466,25 +469,25 @@ const existing = store.db
   .get().n;
 
 if (existing > 0 && !force) {
-  console.log(
+  log.warn(
     `Stress data already present (${existing} users). Re-run with --force to replace it.`,
   );
-  console.log('  npm run seed:stress -- --force');
+  log.info('  npm run seed:stress -- --force');
   process.exit(0);
 }
 
 if (force && existing > 0) {
   const removed = clearStressData(store.db);
-  console.log(`Cleared previous stress users: ${removed}`);
+  log.info(`Cleared previous stress users: ${removed}`);
 }
 
-console.log('Seeding year-long debate stress data…');
+log.info('Seeding year-long debate stress data…');
 const stats = seedStress(store);
-console.log('Done.');
-console.log(
+log.info('Done.');
+log.info(
   `  users=${stats.users}  en topics/posts=${stats.enTopics}/${stats.enPosts}  de topics/posts=${stats.deTopics}/${stats.dePosts}`,
 );
-console.log(
+log.info(
   `  totals topics=${store.db.prepare('SELECT COUNT(*) n FROM topics').get().n} posts=${store.db.prepare('SELECT COUNT(*) n FROM posts').get().n}`,
 );
 
@@ -499,7 +502,7 @@ const heavy = store.db
      LIMIT 8`,
   )
   .all();
-console.log('  heaviest threads:');
+log.info('  heaviest threads:');
 for (const row of heavy) {
-  console.log(`    #${row.id}  ${row.replies} replies  ${row.title.slice(0, 60)}`);
+  log.info(`    #${row.id}  ${row.replies} replies  ${row.title.slice(0, 60)}`);
 }

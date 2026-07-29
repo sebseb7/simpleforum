@@ -17,6 +17,10 @@ import createPostsRouter from './api/posts.js';
 import createStarsRouter from './api/stars.js';
 import createEventsRouter from './api/events.js';
 import createLinkPreviewRouter from './api/linkPreview.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('api');
+const httpLog = createLogger('http');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, '../../.env');
@@ -50,7 +54,11 @@ app.use(express.json({ limit: '1mb' }));
 app.use((req, res, next) => {
   const started = Date.now();
   res.on('finish', () => {
-    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${Date.now() - started}ms)`);
+    const ms = Date.now() - started;
+    const line = `${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms)`;
+    if (res.statusCode >= 500) httpLog.error(line);
+    else if (res.statusCode >= 400) httpLog.warn(line);
+    else httpLog.info(line);
   });
   next();
 });
@@ -73,14 +81,14 @@ app.use('/api', createEventsRouter());
 app.use('/api', createLinkPreviewRouter());
 
 app.use((err, _req, res, _next) => {
-  console.error(err);
+  log.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 app.listen(port, '127.0.0.1', () => {
-  console.log(`Romanum API listening on http://127.0.0.1:${port}`);
-  console.log(`Loaded .env from ${envPath}`);
-  console.log(
+  log.info(`Romanum API listening on http://127.0.0.1:${port}`);
+  log.info(`Loaded .env from ${envPath}`);
+  log.info(
     `GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? 'configured' : 'MISSING'}`,
   );
 });

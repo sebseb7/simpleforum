@@ -3,6 +3,9 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { openDatabase } from '../db.js';
 import { prerenderAll } from './prerender.js';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('ssg');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '../../..');
@@ -19,6 +22,6 @@ try {
   await prerenderAll(store, { rootDir: root });
   process.exit(0);
 } catch (err) {
-  console.error(err);
+  log.error(err);
   process.exit(1);
 }

@@ -108,25 +108,36 @@ export async function materializeDataImagesInHtml(distDir, html) {
 
 /**
  * Rewrite bodyHtml data: images in SSG preloaded Redux state (in place).
+ * @returns {Promise<number>} number of data: images replaced
  */
 export async function materializeStateBodyImages(distDir, preloadedState) {
-  if (!preloadedState) return;
+  if (!preloadedState) return 0;
 
+  let count = 0;
   const topic = preloadedState.topics?.current;
   if (topic?.bodyHtml) {
+    const before = topic.bodyHtml;
     topic.bodyHtml = await materializeDataImagesInHtml(distDir, topic.bodyHtml);
+    count += countMaterialized(before, topic.bodyHtml);
   }
 
   const byTopic = preloadedState.posts?.byTopicId || {};
   for (const posts of Object.values(byTopic)) {
     if (!Array.isArray(posts)) continue;
     for (const post of posts) {
-      if (post?.bodyHtml) {
-        post.bodyHtml = await materializeDataImagesInHtml(
-          distDir,
-          post.bodyHtml,
-        );
-      }
+      if (!post?.bodyHtml) continue;
+      const before = post.bodyHtml;
+      post.bodyHtml = await materializeDataImagesInHtml(distDir, post.bodyHtml);
+      count += countMaterialized(before, post.bodyHtml);
     }
   }
+  return count;
+}
+
+function countMaterialized(before, after) {
+  if (before === after) return 0;
+  const re = /data:image\//gi;
+  const a = before.match(re)?.length || 0;
+  const b = after.match(re)?.length || 0;
+  return Math.max(0, a - b);
 }
