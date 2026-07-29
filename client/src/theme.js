@@ -49,6 +49,21 @@ const theme = createTheme({
     borderRadius: 2,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        html: {
+          height: '100%',
+          overflow: 'hidden',
+        },
+        body: {
+          height: '100%',
+          overflow: 'hidden',
+        },
+        '#root': {
+          height: '100%',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {

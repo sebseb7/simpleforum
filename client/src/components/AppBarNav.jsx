@@ -199,7 +199,7 @@ class AppBarNav extends Component {
 
     return (
       <AppBar
-        position="sticky"
+        position="static"
         elevation={0}
         sx={{
           bgcolor: 'rgba(27, 77, 62, 0.95)',
