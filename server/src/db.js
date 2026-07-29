@@ -42,6 +42,11 @@ export function openDatabase(databasePath) {
   const schema = fs.readFileSync(path.join(sqlDir, 'schema.sql'), 'utf8');
   db.exec(schema);
 
+  // Playwright uses empty isolated DBs; skip demo content there.
+  if (!process.env.E2E_AUTH_SECRET) {
+    seedInitialContent(db);
+  }
+
   return {
     db,
     users: prepareQueryFile(db, 'users.sql'),
@@ -50,4 +55,79 @@ export function openDatabase(databasePath) {
     posts: prepareQueryFile(db, 'posts.sql'),
     stars: prepareQueryFile(db, 'stars.sql'),
   };
+}
+
+function seedInitialContent(db) {
+  const sectionCount = db.prepare('SELECT COUNT(*) AS n FROM sections').get().n;
+  if (sectionCount > 0) return;
+
+  const seed = db.transaction(() => {
+    let author = db.prepare("SELECT id FROM users WHERE google_sub = 'system:seed'").get();
+    if (!author) {
+      const result = db
+        .prepare(
+          `INSERT INTO users (google_sub, email, name, picture, hide_avatar, is_admin)
+           VALUES ('system:seed', 'seed@quixpos.local', 'QuixPOS', NULL, 0, 1)`,
+        )
+        .run();
+      author = { id: result.lastInsertRowid };
+    }
+
+    const insertSection = db.prepare(`
+      INSERT INTO sections (title, description, lang, admin_only_topics, sort_order, created_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const insertTopic = db.prepare(`
+      INSERT INTO topics (section_id, title, body_html, author_id)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    const enDebate = insertSection.run(
+      'Generate Debate English',
+      'Open topics for everyone',
+      'en',
+      0,
+      0,
+      author.id,
+    );
+    insertSection.run(
+      'Announcements English',
+      'Admin opens topics',
+      'en',
+      1,
+      1,
+      author.id,
+    );
+    const deDebate = insertSection.run(
+      'Allgemein - Deutsch',
+      'Offene Themen für alle',
+      'de',
+      0,
+      0,
+      author.id,
+    );
+    insertSection.run(
+      'Ankündigungen - Deutsch',
+      'Admins eröffnen Themen',
+      'de',
+      1,
+      1,
+      author.id,
+    );
+
+    insertTopic.run(
+      enDebate.lastInsertRowid,
+      'Welcome',
+      '<p>Debate starts here.</p>',
+      author.id,
+    );
+    insertTopic.run(
+      deDebate.lastInsertRowid,
+      'Willkommen',
+      '<p>Die Debatte beginnt hier.</p>',
+      author.id,
+    );
+  });
+
+  seed();
 }

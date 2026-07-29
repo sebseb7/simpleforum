@@ -32,7 +32,8 @@ export default function createTestLoginRouter(store) {
 
     let user = store.users.findByGoogleSub.get(googleSub);
     if (user) {
-      store.users.updateLogin.run(email, null, isAdmin, user.id);
+      store.users.updateLogin.run(email, null, user.id);
+      store.users.updateAdmin.run(isAdmin, user.id);
       store.users.updateSettings.run(name, user.hide_avatar, user.id);
       user = store.users.findById.get(user.id);
     } else {

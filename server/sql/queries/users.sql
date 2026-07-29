@@ -11,7 +11,15 @@ INSERT INTO users (google_sub, email, name, picture, hide_avatar, is_admin)
 VALUES (?, ?, ?, ?, 0, ?);
 
 -- name: updateLogin
-UPDATE users SET email = ?, picture = ?, is_admin = ? WHERE id = ?;
+UPDATE users SET email = ?, picture = ? WHERE id = ?;
+
+-- name: updateAdmin
+UPDATE users SET is_admin = ? WHERE id = ?;
+
+-- name: listAll
+SELECT id, google_sub, email, name, picture, hide_avatar, is_admin, created_at
+FROM users
+ORDER BY id ASC;
 
 -- name: updateSettings
 UPDATE users SET name = ?, hide_avatar = ? WHERE id = ?;

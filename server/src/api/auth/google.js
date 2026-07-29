@@ -28,13 +28,8 @@ export default function createGoogleAuthRouter(store) {
 
       let user = store.users.findByGoogleSub.get(profile.googleSub);
       if (user) {
-        // Keep display name and avatar preference; refresh Google email/picture/admin only.
-        store.users.updateLogin.run(
-          profile.email,
-          profile.picture,
-          isAdmin,
-          user.id,
-        );
+        // Keep display name, avatar preference, and admin flag; refresh email/picture only.
+        store.users.updateLogin.run(profile.email, profile.picture, user.id);
         user = store.users.findById.get(user.id);
       } else {
         const result = store.users.insert.run(
