@@ -33,6 +33,30 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              {
+                name: 'react',
+                test: /[/\\]node_modules[/\\](?:react|react-dom|scheduler)[/\\]/,
+              },
+              {
+                name: 'mui',
+                test: /[/\\]node_modules[/\\](?:@mui|@emotion)[/\\]/,
+              },
+              {
+                name: 'quill',
+                test: /[/\\]node_modules[/\\](?:react-quill-new|quill|quill-delta|quill-resize-image|parchment)[/\\]/,
+              },
+              {
+                name: 'vendor',
+                test: /[/\\]node_modules[/\\]/,
+              },
+            ],
+          },
+        },
+      },
     },
   };
 });
