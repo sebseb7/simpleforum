@@ -1,11 +1,17 @@
 const TOKEN_KEY = 'romanum_token';
 const USER_KEY = 'romanum_user';
 
+function canUseStorage() {
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+}
+
 function getToken() {
+  if (!canUseStorage()) return null;
   return localStorage.getItem(TOKEN_KEY);
 }
 
 export function setStoredToken(token) {
+  if (!canUseStorage()) return;
   if (token) localStorage.setItem(TOKEN_KEY, token);
   else {
     localStorage.removeItem(TOKEN_KEY);
@@ -18,6 +24,7 @@ export function getStoredToken() {
 }
 
 export function getStoredUser() {
+  if (!canUseStorage()) return null;
   try {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
@@ -29,6 +36,7 @@ export function getStoredUser() {
 }
 
 export function setStoredUser(user) {
+  if (!canUseStorage()) return;
   if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
   else localStorage.removeItem(USER_KEY);
 }
@@ -157,6 +165,11 @@ const api = {
 
   getMyStars() {
     return request('/stars/mine');
+  },
+
+  getLinkPreview(url) {
+    const q = new URLSearchParams({ url: String(url) });
+    return request(`/link-preview?${q}`);
   },
 };
 

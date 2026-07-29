@@ -41,5 +41,8 @@ const PURIFY_CONFIG = {
 /** Defense-in-depth sanitize before rendering forum HTML as React nodes. */
 export function sanitizeForDisplay(html) {
   if (!html) return '';
-  return DOMPurify.sanitize(String(html), PURIFY_CONFIG);
+  const raw = String(html);
+  // SSG/Node: body was already sanitized on write; DOMPurify needs a DOM.
+  if (typeof window === 'undefined') return raw;
+  return DOMPurify.sanitize(raw, PURIFY_CONFIG);
 }

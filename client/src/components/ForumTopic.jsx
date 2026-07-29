@@ -59,6 +59,14 @@ class ForumTopic extends Component {
   };
 
   componentDidMount() {
+    const { topic, params, postsOffset } = this.props;
+    if (
+      topic?.slug === params.topicSlug &&
+      this.props.currentStatus === 'succeeded' &&
+      (postsOffset === 0 || postsOffset == null)
+    ) {
+      return;
+    }
     this.load(0);
   }
 
@@ -381,6 +389,7 @@ const mapStateToProps = (state, ownProps) => {
     postsTotal: postsWindow?.total ?? 0,
     postsOffset: postsWindow?.offset ?? 0,
     postsLimit: postsWindow?.limit ?? 50,
+    currentStatus: topic ? state.topics.currentStatus : 'loading',
     error: state.topics.error,
     user: state.auth.user,
     deletedNavigate: state.topics.deletedNavigate,

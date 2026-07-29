@@ -16,6 +16,7 @@ import createTopicsRouter from './api/topics.js';
 import createPostsRouter from './api/posts.js';
 import createStarsRouter from './api/stars.js';
 import createEventsRouter from './api/events.js';
+import createLinkPreviewRouter from './api/linkPreview.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, '../../.env');
@@ -69,6 +70,7 @@ app.use('/api', createTopicsRouter(store));
 app.use('/api', createPostsRouter(store));
 app.use('/api', createStarsRouter(store));
 app.use('/api', createEventsRouter());
+app.use('/api', createLinkPreviewRouter());
 
 app.use((err, _req, res, _next) => {
   console.error(err);

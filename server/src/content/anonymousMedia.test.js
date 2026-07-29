@@ -15,20 +15,22 @@ describe('shouldRedactAnonymousMedia', () => {
     author_is_admin: 1,
     section_admin_only_topics: 0,
   };
+  const userInOpenSection = {
+    author_is_admin: 0,
+    section_admin_only_topics: 0,
+  };
 
   it('never redacts for authenticated viewers', () => {
-    assert.equal(shouldRedactAnonymousMedia(userInAdminSection, true), false);
+    assert.equal(shouldRedactAnonymousMedia(userInOpenSection, true), false);
   });
 
-  it('keeps admin posts public in admin sections', () => {
+  it('keeps all posts public in admin-only sections', () => {
     assert.equal(shouldRedactAnonymousMedia(adminInAdminSection, false), false);
+    assert.equal(shouldRedactAnonymousMedia(userInAdminSection, false), false);
   });
 
-  it('redacts user replies in admin sections', () => {
-    assert.equal(shouldRedactAnonymousMedia(userInAdminSection, false), true);
-  });
-
-  it('redacts even admin authors outside admin sections', () => {
+  it('redacts media outside admin-only sections', () => {
     assert.equal(shouldRedactAnonymousMedia(adminInOpenSection, false), true);
+    assert.equal(shouldRedactAnonymousMedia(userInOpenSection, false), true);
   });
 });

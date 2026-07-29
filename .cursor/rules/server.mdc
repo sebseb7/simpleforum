@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+client and backend run in watch mode, no need to restart.

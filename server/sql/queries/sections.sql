@@ -1,3 +1,6 @@
+-- name: listSlugs
+SELECT slug FROM sections ORDER BY sort_order ASC, id ASC;
+
 -- name: list
 SELECT
   s.id, s.title, s.slug, s.description, s.lang, s.admin_only_topics, s.sort_order, s.created_by, s.created_at,

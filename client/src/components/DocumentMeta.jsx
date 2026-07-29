@@ -34,6 +34,7 @@ class DocumentMeta extends Component {
   }
 
   apply() {
+    if (typeof document === 'undefined') return;
     const { title, description } = this.props;
     // Keep the HTML boot title on the home/brand view (no "Welcome · QuixPOS" flash).
     const docTitle = title ? `${title} · QuixPOS` : DEFAULT_DOCUMENT_TITLE;

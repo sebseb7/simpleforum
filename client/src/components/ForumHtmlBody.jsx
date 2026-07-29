@@ -3,6 +3,7 @@ import parse, { domToReact, attributesToProps } from 'html-react-parser';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import { sanitizeForDisplay } from '../content/sanitizeForDisplay.js';
+import ForumLinkPreviews from './ForumLinkPreviews.jsx';
 
 /** User HTML may contain h1–h3; nest them under the page outline (h1/h2). */
 const HEADING_DEMOTE = { h1: 'h3', h2: 'h4', h3: 'h5' };
@@ -68,8 +69,11 @@ export default function ForumHtmlBody({ html, className, sx }) {
   };
 
   return (
-    <Box className={className} sx={{ ...bodySx, ...sx }}>
-      {parse(safe, options)}
+    <Box>
+      <Box className={className} sx={{ ...bodySx, ...sx }}>
+        {parse(safe, options)}
+      </Box>
+      <ForumLinkPreviews html={safe} />
     </Box>
   );
 }

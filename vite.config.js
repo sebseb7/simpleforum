@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, isSsrBuild }) => {
   const env = loadEnv(mode, __dirname, '');
   const port = env.PORT || '3001';
 
@@ -17,6 +17,10 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@shared': path.resolve(__dirname, 'shared'),
       },
+    },
+    ssr: {
+      // Bundle MUI/emotion for Node prerender (CJS interop).
+      noExternal: [/@mui\//, /@emotion\//, 'react-i18next', 'i18next', 'dayjs'],
     },
     server: {
       port: 5173,
@@ -31,32 +35,36 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      outDir: path.resolve(__dirname, 'dist'),
+      outDir: isSsrBuild
+        ? path.resolve(__dirname, 'dist-ssr')
+        : path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
-      rolldownOptions: {
-        output: {
-          codeSplitting: {
-            groups: [
-              {
-                name: 'react',
-                test: /[/\\]node_modules[/\\](?:react|react-dom|scheduler)[/\\]/,
+      rolldownOptions: isSsrBuild
+        ? undefined
+        : {
+            output: {
+              codeSplitting: {
+                groups: [
+                  {
+                    name: 'react',
+                    test: /[/\\]node_modules[/\\](?:react|react-dom|scheduler)[/\\]/,
+                  },
+                  {
+                    name: 'mui',
+                    test: /[/\\]node_modules[/\\](?:@mui|@emotion)[/\\]/,
+                  },
+                  {
+                    name: 'quill',
+                    test: /[/\\]node_modules[/\\](?:react-quill-new|quill|quill-delta|quill-resize-image|parchment)[/\\]/,
+                  },
+                  {
+                    name: 'vendor',
+                    test: /[/\\]node_modules[/\\]/,
+                  },
+                ],
               },
-              {
-                name: 'mui',
-                test: /[/\\]node_modules[/\\](?:@mui|@emotion)[/\\]/,
-              },
-              {
-                name: 'quill',
-                test: /[/\\]node_modules[/\\](?:react-quill-new|quill|quill-delta|quill-resize-image|parchment)[/\\]/,
-              },
-              {
-                name: 'vendor',
-                test: /[/\\]node_modules[/\\]/,
-              },
-            ],
+            },
           },
-        },
-      },
     },
   };
 });

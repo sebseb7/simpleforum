@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import ForumLinkPreviews from './ForumLinkPreviews.jsx';
 
 const QuillEditorInner = lazy(async () => {
   const m = await import('../quillSetup.js');
@@ -27,29 +28,32 @@ const QuillEditorInner = lazy(async () => {
  */
 export default function ForumQuillEditor({ value, onChange, onImageReject, ...rest }) {
   return (
-    <Suspense
-      fallback={
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 160,
-            bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <CircularProgress size={28} />
-        </Box>
-      }
-    >
-      <QuillEditorInner
-        value={value}
-        onChange={onChange}
-        onImageReject={onImageReject}
-        {...rest}
-      />
-    </Suspense>
+    <Box>
+      <Suspense
+        fallback={
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 160,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <CircularProgress size={28} />
+          </Box>
+        }
+      >
+        <QuillEditorInner
+          value={value}
+          onChange={onChange}
+          onImageReject={onImageReject}
+          {...rest}
+        />
+      </Suspense>
+      <ForumLinkPreviews html={value} />
+    </Box>
   );
 }

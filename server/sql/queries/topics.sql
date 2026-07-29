@@ -1,3 +1,6 @@
+-- name: listSlugs
+SELECT slug FROM topics ORDER BY id ASC;
+
 -- name: listBySection
 SELECT
   t.id, t.section_id, t.title, t.slug, t.body_html, t.author_id, t.is_closed, t.created_at, t.updated_at,

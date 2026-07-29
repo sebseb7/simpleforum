@@ -24,6 +24,14 @@ import DocumentMeta from './DocumentMeta.jsx';
 
 class ForumSection extends Component {
   componentDidMount() {
+    const { section, listStatus, params, listOffset } = this.props;
+    if (
+      section?.slug === params.sectionSlug &&
+      listStatus === 'succeeded' &&
+      (listOffset === 0 || listOffset == null)
+    ) {
+      return;
+    }
     this.load(0);
   }
 

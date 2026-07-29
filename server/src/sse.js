@@ -1,3 +1,5 @@
+import { scheduleRebuildForEvent } from './ssg/triggerBuild.js';
+
 const clients = new Set();
 
 export function addClient(res) {
@@ -13,8 +15,10 @@ export function broadcast(event) {
   for (const res of clients) {
     try {
       res.write(data);
+      if (typeof res.flush === 'function') res.flush();
     } catch {
       clients.delete(res);
     }
   }
+  scheduleRebuildForEvent(event);
 }

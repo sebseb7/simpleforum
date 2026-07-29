@@ -21,6 +21,9 @@ export function normalizeLang(lang) {
 }
 
 export function getStoredLang() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return 'en';
+  }
   try {
     return normalizeLang(localStorage.getItem(LANG_STORAGE_KEY));
   } catch {
@@ -30,6 +33,9 @@ export function getStoredLang() {
 
 export function setStoredLang(lang) {
   const next = normalizeLang(lang);
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return next;
+  }
   try {
     localStorage.setItem(LANG_STORAGE_KEY, next);
   } catch {

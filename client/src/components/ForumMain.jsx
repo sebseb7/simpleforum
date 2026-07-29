@@ -21,6 +21,12 @@ function uiLang(i18n) {
 
 class ForumMain extends Component {
   componentDidMount() {
+    if (
+      this.props.status === 'succeeded' &&
+      this.props.listMode?.lang === uiLang(this.props.i18n)
+    ) {
+      return;
+    }
     this.load();
   }
 
@@ -102,6 +108,7 @@ class ForumMain extends Component {
 const mapStateToProps = (state) => ({
   sections: state.sections.items,
   status: state.sections.status,
+  listMode: state.sections.listMode,
   error: state.sections.error,
 });
 
