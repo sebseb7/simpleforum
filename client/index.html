@@ -2,7 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        var l = localStorage.getItem('romanum_lang');
+        if (l === 'de' || l === 'en') document.documentElement.lang = l;
+      } catch (e) {}
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1b4d3e" />
     <title>QuixPOS - Community Discussions</title>
     <meta
       name="description"
@@ -14,6 +21,22 @@
       content="QuixPOS community forum for open discussion and debate."
     />
     <meta property="og:type" content="website" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background-color: #f3efe6;
+        background-image:
+          radial-gradient(ellipse at top left, #e8dfc8 0%, transparent 50%),
+          radial-gradient(ellipse at bottom right, #d4e0d8 0%, transparent 45%);
+        background-attachment: fixed;
+      }
+      #root {
+        height: 100%;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

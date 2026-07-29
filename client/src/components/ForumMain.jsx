@@ -13,9 +13,10 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import { fetchSections } from '../store/sectionsSlice.js';
 import DocumentMeta from './DocumentMeta.jsx';
+import { normalizeLang } from '../i18n/index.js';
 
 function uiLang(i18n) {
-  return (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
+  return normalizeLang(i18n.language);
 }
 
 class ForumMain extends Component {
@@ -38,7 +39,7 @@ class ForumMain extends Component {
 
     return (
       <Box>
-        <DocumentMeta title={t('home.welcome')} description={t('home.blurb')} />
+        <DocumentMeta description={t('home.blurb')} />
         <Typography component="h1" variant="h3" gutterBottom>
           {t('home.welcome')}
         </Typography>

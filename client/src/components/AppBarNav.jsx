@@ -25,7 +25,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
 import LoginButton from './LoginButton.jsx';
 import { logout, deleteAccount, updateProfile } from '../store/authSlice.js';
-import { changeLanguage } from '../i18n/index.js';
+import { changeLanguage, getStoredLang, normalizeLang } from '../i18n/index.js';
 
 class AppBarNav extends Component {
   state = {
@@ -146,7 +146,7 @@ class AppBarNav extends Component {
   };
 
   render() {
-    const { user, t, i18n } = this.props;
+    const { user, token, authStatus, t, i18n } = this.props;
     const {
       navAnchor,
       menuAnchor,
@@ -165,7 +165,10 @@ class AppBarNav extends Component {
     const avatarSrc = user && !user.hideAvatar ? user.picture || undefined : undefined;
     const nameDirty = displayName.trim() !== (user?.name || '');
     const canSaveName = nameDirty && displayName.trim().length > 0 && !settingsSaving;
-    const lang = (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
+    const lang = normalizeLang(i18n.language || getStoredLang());
+    // Prefer cached/hydrated user; while JWT is validating, never flash Sign in.
+    const showAccount = Boolean(user);
+    const showSignIn = !user && !token && authStatus !== 'loading';
 
     const langSwitch = (
       <ToggleButtonGroup
@@ -195,6 +198,180 @@ class AppBarNav extends Component {
         <ToggleButton value="en">{t('nav.langEn')}</ToggleButton>
         <ToggleButton value="de">{t('nav.langDe')}</ToggleButton>
       </ToggleButtonGroup>
+    );
+
+    const accountSlot = (
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          width: { xs: 40, md: 148 },
+        }}
+      >
+        {showAccount ? (
+          <>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: 'center', cursor: 'pointer', minWidth: 0, maxWidth: '100%' }}
+              onClick={this.openMenu}
+            >
+              <IconButton size="small" sx={{ p: 0 }} aria-label={t('account.menu')}>
+                <Avatar src={avatarSrc} sx={{ width: 32, height: 32 }}>
+                  {user.name?.[0]}
+                </Avatar>
+              </IconButton>
+              <Box sx={{ display: { xs: 'none', md: 'block' }, minWidth: 0 }}>
+                <Typography variant="body2" color="inherit" noWrap>
+                  {user.name}
+                </Typography>
+              </Box>
+            </Stack>
+            <Popover
+              open={menuOpen}
+              anchorEl={menuAnchor}
+              onClose={this.closeMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              slotProps={{
+                paper: {
+                  sx: { p: 2, width: 320, maxWidth: 'calc(100vw - 32px)' },
+                },
+              }}
+            >
+              <Typography component="p" variant="subtitle1" fontWeight={600}>
+                {user.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                {user.email}
+              </Typography>
+              <Button fullWidth variant="outlined" onClick={this.handleLogout} sx={{ mb: 2 }}>
+                {t('account.logOut')}
+              </Button>
+
+              <Divider sx={{ mb: 2 }} />
+              <Typography component="p" variant="subtitle2" gutterBottom>
+                {t('account.settings')}
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                label={t('account.displayName')}
+                value={displayName}
+                onChange={(e) =>
+                  this.setState({
+                    displayName: e.target.value,
+                    settingsError: null,
+                  })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && canSaveName) {
+                    e.preventDefault();
+                    this.handleSaveDisplayName();
+                  }
+                }}
+                disabled={settingsSaving}
+                sx={{ mb: 1 }}
+                slotProps={{
+                  input: {
+                    endAdornment: nameDirty ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          aria-label={t('account.saveDisplayName')}
+                          onClick={this.handleSaveDisplayName}
+                          disabled={!canSaveName}
+                        >
+                          <SaveIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
+                  },
+                }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={hideAvatar}
+                    onChange={this.handleHideAvatarChange}
+                    disabled={settingsSaving}
+                  />
+                }
+                label={t('account.hideAvatar')}
+                sx={{ mb: 1 }}
+              />
+              {settingsError && (
+                <Alert severity="error" sx={{ mb: 1 }}>
+                  {settingsError}
+                </Alert>
+              )}
+
+              <Divider sx={{ mb: 2, mt: 1 }} />
+              <Typography component="p" variant="subtitle2" color="error" gutterBottom>
+                {t('account.deleteAccount')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                {t('account.deleteAccountBody', { name: user.name })}
+              </Typography>
+              {deleteError && (
+                <Alert severity="error" sx={{ mb: 1.5 }}>
+                  {deleteError}
+                </Alert>
+              )}
+              <TextField
+                fullWidth
+                size="small"
+                label={t('account.confirmDisplayName')}
+                value={confirmName}
+                onChange={(e) => this.setState({ confirmName: e.target.value })}
+                disabled={deleting}
+                sx={{ mb: 1.5 }}
+              />
+              <Button
+                fullWidth
+                color="error"
+                variant="contained"
+                onClick={this.handleDeleteAccount}
+                disabled={deleting || confirmName.trim() !== user.name}
+              >
+                {deleting ? t('account.deleting') : t('account.deleteMyAccount')}
+              </Button>
+            </Popover>
+          </>
+        ) : showSignIn ? (
+          <>
+            <Button
+              color="inherit"
+              onClick={this.openLogin}
+              sx={{ flexShrink: 0, whiteSpace: 'nowrap', minWidth: 0, px: { xs: 1, sm: 1.5 } }}
+            >
+              {t('nav.signIn')}
+            </Button>
+            <Popover
+              open={loginOpen}
+              anchorEl={loginAnchor}
+              onClose={this.closeLogin}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              slotProps={{
+                paper: {
+                  sx: { p: 2 },
+                },
+              }}
+            >
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                {t('nav.signInHint')}
+              </Typography>
+              <LoginButton />
+            </Popover>
+          </>
+        ) : (
+          <Avatar sx={{ width: 32, height: 32, bgcolor: 'rgba(255,255,255,0.2)' }} />
+        )}
+      </Box>
     );
 
     return (
@@ -262,6 +439,8 @@ class AppBarNav extends Component {
             {t('brand')}
           </Typography>
 
+          {accountSlot}
+
           <Box
             sx={{
               display: { xs: 'none', sm: 'flex' },
@@ -276,174 +455,16 @@ class AppBarNav extends Component {
             <Button color="inherit" component={RouterLink} to="/starred">
               {t('nav.starred')}
             </Button>
-            {user?.isAdmin && (
-              <Button color="inherit" component={RouterLink} to="/admin/sections">
-                {t('nav.admin')}
-              </Button>
-            )}
+            <Box sx={{ width: 72, flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+              {user?.isAdmin ? (
+                <Button color="inherit" component={RouterLink} to="/admin/sections">
+                  {t('nav.admin')}
+                </Button>
+              ) : null}
+            </Box>
           </Box>
 
           {langSwitch}
-
-          {user ? (
-            <>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}
-                onClick={this.openMenu}
-              >
-                <IconButton size="small" sx={{ p: 0 }} aria-label={t('account.menu')}>
-                  <Avatar src={avatarSrc} sx={{ width: 32, height: 32 }}>
-                    {user.name?.[0]}
-                  </Avatar>
-                </IconButton>
-                <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                  <Typography variant="body2" color="inherit" noWrap>
-                    {user.name}
-                  </Typography>
-                </Box>
-              </Stack>
-              <Popover
-                open={menuOpen}
-                anchorEl={menuAnchor}
-                onClose={this.closeMenu}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                slotProps={{
-                  paper: {
-                    sx: { p: 2, width: 320, maxWidth: 'calc(100vw - 32px)' },
-                  },
-                }}
-              >
-                <Typography component="p" variant="subtitle1" fontWeight={600}>
-                  {user.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                  {user.email}
-                </Typography>
-                <Button fullWidth variant="outlined" onClick={this.handleLogout} sx={{ mb: 2 }}>
-                  {t('account.logOut')}
-                </Button>
-
-                <Divider sx={{ mb: 2 }} />
-                <Typography component="p" variant="subtitle2" gutterBottom>
-                  {t('account.settings')}
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={t('account.displayName')}
-                  value={displayName}
-                  onChange={(e) =>
-                    this.setState({
-                      displayName: e.target.value,
-                      settingsError: null,
-                    })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && canSaveName) {
-                      e.preventDefault();
-                      this.handleSaveDisplayName();
-                    }
-                  }}
-                  disabled={settingsSaving}
-                  sx={{ mb: 1 }}
-                  slotProps={{
-                    input: {
-                      endAdornment: nameDirty ? (
-                        <InputAdornment position="end">
-                          <IconButton
-                            edge="end"
-                            size="small"
-                            aria-label={t('account.saveDisplayName')}
-                            onClick={this.handleSaveDisplayName}
-                            disabled={!canSaveName}
-                          >
-                            <SaveIcon fontSize="small" />
-                          </IconButton>
-                        </InputAdornment>
-                      ) : null,
-                    },
-                  }}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={hideAvatar}
-                      onChange={this.handleHideAvatarChange}
-                      disabled={settingsSaving}
-                    />
-                  }
-                  label={t('account.hideAvatar')}
-                  sx={{ mb: 1 }}
-                />
-                {settingsError && (
-                  <Alert severity="error" sx={{ mb: 1 }}>
-                    {settingsError}
-                  </Alert>
-                )}
-
-                <Divider sx={{ mb: 2, mt: 1 }} />
-                <Typography component="p" variant="subtitle2" color="error" gutterBottom>
-                  {t('account.deleteAccount')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                  {t('account.deleteAccountBody', { name: user.name })}
-                </Typography>
-                {deleteError && (
-                  <Alert severity="error" sx={{ mb: 1.5 }}>
-                    {deleteError}
-                  </Alert>
-                )}
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={t('account.confirmDisplayName')}
-                  value={confirmName}
-                  onChange={(e) => this.setState({ confirmName: e.target.value })}
-                  disabled={deleting}
-                  sx={{ mb: 1.5 }}
-                />
-                <Button
-                  fullWidth
-                  color="error"
-                  variant="contained"
-                  onClick={this.handleDeleteAccount}
-                  disabled={deleting || confirmName.trim() !== user.name}
-                >
-                  {deleting ? t('account.deleting') : t('account.deleteMyAccount')}
-                </Button>
-              </Popover>
-            </>
-          ) : (
-            <>
-              <Button
-                color="inherit"
-                onClick={this.openLogin}
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                {t('nav.signIn')}
-              </Button>
-              <Popover
-                open={loginOpen}
-                anchorEl={loginAnchor}
-                onClose={this.closeLogin}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                slotProps={{
-                  paper: {
-                    sx: { p: 2 },
-                  },
-                }}
-              >
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                  {t('nav.signInHint')}
-                </Typography>
-                <LoginButton />
-              </Popover>
-            </>
-          )}
         </Toolbar>
       </AppBar>
     );
@@ -452,6 +473,8 @@ class AppBarNav extends Component {
 
 const mapStateToProps = (state) => ({
   user: state.auth.user,
+  token: state.auth.token,
+  authStatus: state.auth.status,
 });
 
 const mapDispatchToProps = { logout, deleteAccount, updateProfile };

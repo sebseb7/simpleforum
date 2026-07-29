@@ -1,11 +1,20 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api, { getStoredToken, setStoredToken } from '../api.js';
+import api, {
+  getStoredToken,
+  setStoredToken,
+  getStoredUser,
+  setStoredUser,
+} from '../api.js';
+
+const initialToken = getStoredToken();
+const initialUser = initialToken ? getStoredUser() : null;
 
 export const hydrateAuth = createAsyncThunk('auth/hydrate', async () => {
   const token = getStoredToken();
   if (!token) return { token: null, user: null };
   try {
     const { user } = await api.getMe();
+    setStoredUser(user);
     return { token, user };
   } catch {
     setStoredToken(null);
@@ -18,6 +27,7 @@ export const loginWithGoogle = createAsyncThunk(
   async (credential) => {
     const { token, user } = await api.loginWithGoogle(credential);
     setStoredToken(token);
+    setStoredUser(user);
     return { token, user };
   },
 );
@@ -32,6 +42,7 @@ export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
   async ({ name, hideAvatar }) => {
     const { user } = await api.updateMe({ name, hideAvatar });
+    setStoredUser(user);
     return user;
   },
 );
@@ -39,9 +50,10 @@ export const updateProfile = createAsyncThunk(
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    token: getStoredToken(),
-    user: null,
-    status: 'idle',
+    token: initialToken,
+    user: initialUser,
+    // While a JWT exists, treat session as hydrating so UI never flashes "Sign in".
+    status: initialToken ? 'loading' : 'idle',
     error: null,
   },
   reducers: {
@@ -49,6 +61,7 @@ const authSlice = createSlice({
       state.token = null;
       state.user = null;
       state.error = null;
+      state.status = 'idle';
       setStoredToken(null);
     },
   },
@@ -70,6 +83,7 @@ const authSlice = createSlice({
       .addCase(loginWithGoogle.fulfilled, (state, action) => {
         state.token = action.payload.token;
         state.user = action.payload.user;
+        state.status = 'succeeded';
         state.error = null;
       })
       .addCase(loginWithGoogle.rejected, (state, action) => {
@@ -78,6 +92,7 @@ const authSlice = createSlice({
       .addCase(deleteAccount.fulfilled, (state) => {
         state.token = null;
         state.user = null;
+        state.status = 'idle';
         state.error = null;
       })
       .addCase(deleteAccount.rejected, (state, action) => {

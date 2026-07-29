@@ -1,10 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api.js';
+import { getStoredLang } from '../i18n/index.js';
 
 function normalizeListMode(mode) {
-  if (!mode) return { lang: 'en' };
+  if (!mode) return { lang: getStoredLang() };
   if (mode.all) return { all: true };
-  const lang = String(mode.lang || 'en').toLowerCase().slice(0, 2);
+  const lang = String(mode.lang || getStoredLang()).toLowerCase().slice(0, 2);
   return { lang: lang === 'de' ? 'de' : 'en' };
 }
 
@@ -37,7 +38,7 @@ const sectionsSlice = createSlice({
   name: 'sections',
   initialState: {
     items: [],
-    listMode: { lang: 'en' },
+    listMode: { lang: getStoredLang() },
     status: 'idle',
     error: null,
   },

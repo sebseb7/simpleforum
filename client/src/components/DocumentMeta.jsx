@@ -33,18 +33,14 @@ class DocumentMeta extends Component {
     }
   }
 
-  componentWillUnmount() {
-    document.title = DEFAULT_DOCUMENT_TITLE;
-    upsertMeta('name', 'description', DEFAULT_DESCRIPTION);
-    upsertMeta('property', 'og:title', DEFAULT_DOCUMENT_TITLE);
-    upsertMeta('property', 'og:description', DEFAULT_DESCRIPTION);
-  }
-
   apply() {
     const { title, description } = this.props;
+    // Keep the HTML boot title on the home/brand view (no "Welcome · QuixPOS" flash).
     const docTitle = title ? `${title} · QuixPOS` : DEFAULT_DOCUMENT_TITLE;
     const desc = (description || DEFAULT_DESCRIPTION).replace(/\s+/g, ' ').trim().slice(0, 300);
-    document.title = docTitle;
+    if (document.title !== docTitle) {
+      document.title = docTitle;
+    }
     upsertMeta('name', 'description', desc);
     upsertMeta('property', 'og:title', docTitle);
     upsertMeta('property', 'og:description', desc);

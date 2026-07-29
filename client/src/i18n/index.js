@@ -12,14 +12,30 @@ dayjs.extend(localizedFormat);
 export const LANG_STORAGE_KEY = 'romanum_lang';
 export const SUPPORTED_LANGS = ['en', 'de'];
 
-function readStoredLang() {
-  try {
-    const stored = localStorage.getItem(LANG_STORAGE_KEY);
-    if (SUPPORTED_LANGS.includes(stored)) return stored;
-  } catch {
-    // ignore
-  }
+/** Normalize any locale tag to a supported UI lang. */
+export function normalizeLang(lang) {
+  const raw = String(lang || '').toLowerCase();
+  if (raw.startsWith('de')) return 'de';
+  if (SUPPORTED_LANGS.includes(raw)) return raw;
   return 'en';
+}
+
+export function getStoredLang() {
+  try {
+    return normalizeLang(localStorage.getItem(LANG_STORAGE_KEY));
+  } catch {
+    return 'en';
+  }
+}
+
+export function setStoredLang(lang) {
+  const next = normalizeLang(lang);
+  try {
+    localStorage.setItem(LANG_STORAGE_KEY, next);
+  } catch {
+    // ignore quota / private mode
+  }
+  return next;
 }
 
 function applyDocumentLang(lang) {
@@ -33,32 +49,36 @@ function applyDayjsLocale(lang) {
   dayjs.locale(dateLocale);
 }
 
+const initialLang = getStoredLang();
+
 i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     de: { translation: de },
   },
-  lng: readStoredLang(),
+  lng: initialLang,
   fallbackLng: 'en',
+  supportedLngs: SUPPORTED_LANGS,
+  nonExplicitSupportedLngs: true,
+  load: 'languageOnly',
   interpolation: { escapeValue: false },
 });
 
-applyDocumentLang(i18n.language);
-applyDayjsLocale(i18n.language);
+applyDocumentLang(initialLang);
+applyDayjsLocale(initialLang);
 
 i18n.on('languageChanged', (lang) => {
-  try {
-    localStorage.setItem(LANG_STORAGE_KEY, lang);
-  } catch {
-    // ignore
-  }
-  applyDocumentLang(lang);
-  applyDayjsLocale(lang);
+  const next = setStoredLang(lang);
+  applyDocumentLang(next);
+  applyDayjsLocale(next);
 });
 
 export function changeLanguage(lang) {
-  if (!SUPPORTED_LANGS.includes(lang)) return Promise.resolve();
-  return i18n.changeLanguage(lang);
+  const next = normalizeLang(lang);
+  if (!SUPPORTED_LANGS.includes(next)) return Promise.resolve();
+  // Persist immediately so a fast reload still sees the choice.
+  setStoredLang(next);
+  return i18n.changeLanguage(next);
 }
 
 export default i18n;

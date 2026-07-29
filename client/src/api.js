@@ -1,4 +1,5 @@
 const TOKEN_KEY = 'romanum_token';
+const USER_KEY = 'romanum_user';
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -6,11 +7,30 @@ function getToken() {
 
 export function setStoredToken(token) {
   if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+  else {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
 }
 
 export function getStoredToken() {
   return getToken();
+}
+
+export function getStoredUser() {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return user && typeof user === 'object' ? user : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user) {
+  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+  else localStorage.removeItem(USER_KEY);
 }
 
 async function request(path, options = {}) {
