@@ -7,6 +7,8 @@ import {
   applyTopicClosed,
   applyTopicDeleted,
   applyStarOnTopic,
+  TOPICS_PAGE_SIZE,
+  POSTS_PAGE_SIZE,
 } from './store/topicsSlice.js';
 import { applyStarOnPost } from './store/postsSlice.js';
 
@@ -38,6 +40,31 @@ export function stopSse() {
   }
 }
 
+function refetchSectionTopics(store, sectionId) {
+  const { listOffset, listLimit, section } = store.getState().topics;
+  if (section?.id !== sectionId) return;
+  store.dispatch(
+    fetchSectionTopics({
+      sectionId,
+      offset: listOffset || 0,
+      limit: listLimit || TOPICS_PAGE_SIZE,
+    }),
+  );
+}
+
+function refetchTopic(store, topicId) {
+  const { current } = store.getState().topics;
+  const win = store.getState().posts.window;
+  if (current?.id !== topicId) return;
+  store.dispatch(
+    fetchTopic({
+      topicId,
+      offset: win?.topicId === topicId ? win.offset : 0,
+      limit: win?.topicId === topicId ? win.limit : POSTS_PAGE_SIZE,
+    }),
+  );
+}
+
 function handleEvent(store, msg) {
   const { type, payload } = msg;
   const state = store.getState();
@@ -50,7 +77,7 @@ function handleEvent(store, msg) {
 
     case 'topic.created':
       if (state.topics.section?.id === payload.sectionId) {
-        store.dispatch(fetchSectionTopics(payload.sectionId));
+        refetchSectionTopics(store, payload.sectionId);
       }
       store.dispatch(fetchSections());
       break;
@@ -58,16 +85,16 @@ function handleEvent(store, msg) {
     case 'topic.closed':
       store.dispatch(applyTopicClosed({ topicId: payload.topicId }));
       if (state.topics.section?.id === payload.sectionId) {
-        store.dispatch(fetchSectionTopics(payload.sectionId));
+        refetchSectionTopics(store, payload.sectionId);
       }
       break;
 
     case 'topic.updated':
       if (state.topics.current?.id === payload.topicId) {
-        store.dispatch(fetchTopic(payload.topicId));
+        refetchTopic(store, payload.topicId);
       }
       if (state.topics.section?.id === payload.sectionId) {
-        store.dispatch(fetchSectionTopics(payload.sectionId));
+        refetchSectionTopics(store, payload.sectionId);
       }
       break;
 
@@ -79,7 +106,7 @@ function handleEvent(store, msg) {
         }),
       );
       if (state.topics.section?.id === payload.sectionId) {
-        store.dispatch(fetchSectionTopics(payload.sectionId));
+        refetchSectionTopics(store, payload.sectionId);
       }
       store.dispatch(fetchSections());
       break;
@@ -88,10 +115,10 @@ function handleEvent(store, msg) {
     case 'post.updated':
     case 'post.deleted':
       if (state.topics.current?.id === payload.topicId) {
-        store.dispatch(fetchTopic(payload.topicId));
+        refetchTopic(store, payload.topicId);
       }
       if (state.topics.section?.id === payload.sectionId) {
-        store.dispatch(fetchSectionTopics(payload.sectionId));
+        refetchSectionTopics(store, payload.sectionId);
       }
       break;
 
@@ -100,7 +127,7 @@ function handleEvent(store, msg) {
       if (payload.sectionIds?.length) {
         for (const sectionId of payload.sectionIds) {
           if (state.topics.section?.id === sectionId) {
-            store.dispatch(fetchSectionTopics(sectionId));
+            refetchSectionTopics(store, sectionId);
           }
         }
       }
@@ -119,10 +146,10 @@ function handleEvent(store, msg) {
 
     case 'user.updated':
       if (state.topics.current) {
-        store.dispatch(fetchTopic(state.topics.current.id));
+        refetchTopic(store, state.topics.current.id);
       }
       if (state.topics.section?.id) {
-        store.dispatch(fetchSectionTopics(state.topics.section.id));
+        refetchSectionTopics(store, state.topics.section.id);
       }
       break;
 

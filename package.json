@@ -9,11 +9,13 @@
     "client": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test:unit": "node --test server/src/content/*.test.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "test:e2e:update-snapshots": "playwright test e2e/00-visual.spec.js --update-snapshots",
-    "admin": "node server/scripts/toggle-admin.js"
+    "admin": "node server/scripts/toggle-admin.js",
+    "seed:stress": "node server/scripts/seed-stress.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -25,9 +27,11 @@
     "better-sqlite3": "^13.0.2",
     "cors": "^2.8.6",
     "dayjs": "^1.11.21",
+    "dompurify": "^3.4.12",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "google-auth-library": "^10.9.1",
+    "html-react-parser": "^6.1.5",
     "i18next": "^26.3.6",
     "jsonwebtoken": "^9.0.3",
     "quill-resize-image": "^1.0.11",
@@ -37,7 +41,8 @@
     "react-quill-new": "^3.8.3",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.2",
-    "redux": "^5.0.1"
+    "redux": "^5.0.1",
+    "sanitize-html": "^2.17.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",

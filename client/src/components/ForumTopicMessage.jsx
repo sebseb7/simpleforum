@@ -9,6 +9,7 @@ import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import ForumStarButton from './ForumStarButton.jsx';
+import ContentFilterAlert from './ContentFilterAlert.jsx';
 import { updatePost, deletePost } from '../store/postsSlice.js';
 import { formatForumDate } from '../i18n/formatDate.js';
 import {
@@ -17,6 +18,9 @@ import {
   getQuillPlaceholder,
   quillFormats,
 } from '../quillSetup.js';
+import { contentErrorMessage, isOverBodyLimit } from '../content/contentErrors.js';
+import { imageRejectMessage } from '../content/quillImageHandler.js';
+import ForumHtmlBody from './ForumHtmlBody.jsx';
 
 class ForumTopicMessage extends Component {
   state = {
@@ -24,6 +28,12 @@ class ForumTopicMessage extends Component {
     editBodyHtml: '',
     error: null,
     saving: false,
+    contentFilter: null,
+    imageError: null,
+  };
+
+  handleImageReject = (code) => {
+    this.setState({ imageError: imageRejectMessage(code) });
   };
 
   startEdit = () => {
@@ -31,11 +41,13 @@ class ForumTopicMessage extends Component {
       editing: true,
       editBodyHtml: this.props.post.bodyHtml || '',
       error: null,
+      contentFilter: null,
+      imageError: null,
     });
   };
 
   cancelEdit = () => {
-    this.setState({ editing: false, error: null });
+    this.setState({ editing: false, error: null, imageError: null });
   };
 
   saveEdit = async () => {
@@ -45,18 +57,28 @@ class ForumTopicMessage extends Component {
       this.setState({ error: t('post.messageRequired') });
       return;
     }
-    this.setState({ saving: true, error: null });
+    if (isOverBodyLimit(editBodyHtml)) {
+      this.setState({
+        error: contentErrorMessage({ data: { error: 'body_too_large' } }, t),
+      });
+      return;
+    }
+    this.setState({ saving: true, error: null, imageError: null });
     try {
-      await this.props
+      const { contentFilter } = await this.props
         .updatePost({
           postId: this.props.post.id,
           bodyHtml: editBodyHtml,
         })
         .unwrap();
-      this.setState({ editing: false, saving: false });
+      this.setState({
+        editing: false,
+        saving: false,
+        contentFilter: contentFilter?.changed ? contentFilter : null,
+      });
     } catch (err) {
       this.setState({
-        error: err.message || t('post.updateFailed'),
+        error: contentErrorMessage(err, t) || t('post.updateFailed'),
         saving: false,
       });
     }
@@ -69,7 +91,7 @@ class ForumTopicMessage extends Component {
 
   render() {
     const { post, user, t, i18n } = this.props;
-    const { editing, editBodyHtml, error, saving } = this.state;
+    const { editing, editBodyHtml, error, saving, contentFilter, imageError } = this.state;
     const isAuthor = user && user.id === post.authorId;
 
     return (
@@ -112,6 +134,20 @@ class ForumTopicMessage extends Component {
                 {error}
               </Alert>
             )}
+            {imageError && (
+              <Alert
+                severity="warning"
+                sx={{ mb: 1 }}
+                onClose={() => this.setState({ imageError: null })}
+              >
+                {imageError}
+              </Alert>
+            )}
+            <ContentFilterAlert
+              contentFilter={contentFilter}
+              onClose={() => this.setState({ contentFilter: null })}
+              sx={{ mb: 1 }}
+            />
 
             {editing ? (
               <Box>
@@ -121,7 +157,7 @@ class ForumTopicMessage extends Component {
                     theme="snow"
                     value={editBodyHtml}
                     onChange={(value) => this.setState({ editBodyHtml: value })}
-                    modules={getQuillModules()}
+                    modules={getQuillModules({ onImageReject: this.handleImageReject })}
                     formats={quillFormats}
                     placeholder={getQuillPlaceholder()}
                   />
@@ -136,14 +172,7 @@ class ForumTopicMessage extends Component {
                 </Stack>
               </Box>
             ) : (
-              <Box
-                className="ql-editor-readonly"
-                sx={{
-                  '& p': { m: 0, mb: 1 },
-                  '& img': { maxWidth: '100%' },
-                }}
-                dangerouslySetInnerHTML={{ __html: post.bodyHtml }}
-              />
+              <ForumHtmlBody className="ql-editor-readonly" html={post.bodyHtml} />
             )}
           </Box>
         </Stack>

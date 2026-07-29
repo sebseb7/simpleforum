@@ -7,7 +7,11 @@ SELECT
 FROM posts p
 JOIN users u ON u.id = p.author_id
 WHERE p.topic_id = ?
-ORDER BY p.created_at ASC, p.id ASC;
+ORDER BY p.created_at DESC, p.id DESC
+LIMIT ? OFFSET ?;
+
+-- name: countByTopic
+SELECT COUNT(*) AS n FROM posts WHERE topic_id = ?;
 
 -- name: findById
 SELECT

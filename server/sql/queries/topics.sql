@@ -10,7 +10,11 @@ FROM topics t
 JOIN users u ON u.id = t.author_id
 JOIN sections sec ON sec.id = t.section_id
 WHERE t.section_id = ?
-ORDER BY t.updated_at DESC, t.id DESC;
+ORDER BY t.updated_at DESC, t.id DESC
+LIMIT ? OFFSET ?;
+
+-- name: countBySection
+SELECT COUNT(*) AS n FROM topics WHERE section_id = ?;
 
 -- name: findById
 SELECT

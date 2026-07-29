@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { requireAuth, requireAdmin, optionalAuth } from '../auth.js';
 import { broadcast } from '../sse.js';
+import { parseWindow, windowMeta } from '../pagination.js';
+import { validateTopicInput, validateSectionInput } from '../content/validate.js';
+import { ContentValidationError, sendContentError } from '../content/errors.js';
 
 const SUPPORTED_SECTION_LANGS = new Set(['en', 'de']);
 
@@ -63,12 +66,20 @@ export default function createSectionsRouter(store) {
       sortOrder = 0,
       lang = 'en',
     } = req.body || {};
-    if (!title?.trim()) {
-      return res.status(400).json({ error: 'title required' });
+    let cleanTitle;
+    let cleanDescription;
+    try {
+      ({ title: cleanTitle, description: cleanDescription } = validateSectionInput({
+        title,
+        description,
+      }));
+    } catch (err) {
+      if (err instanceof ContentValidationError) return sendContentError(res, err);
+      throw err;
     }
     const result = store.sections.insert.run(
-      title.trim(),
-      description || '',
+      cleanTitle,
+      cleanDescription,
       normalizeLang(lang),
       adminOnlyTopics ? 1 : 0,
       Number(sortOrder) || 0,
@@ -85,8 +96,17 @@ export default function createSectionsRouter(store) {
     if (!existing) {
       return res.status(404).json({ error: 'Section not found' });
     }
-    const title = req.body.title ?? existing.title;
-    const description = req.body.description ?? existing.description;
+    let cleanTitle;
+    let cleanDescription;
+    try {
+      ({ title: cleanTitle, description: cleanDescription } = validateSectionInput({
+        title: req.body.title ?? existing.title,
+        description: req.body.description ?? existing.description,
+      }));
+    } catch (err) {
+      if (err instanceof ContentValidationError) return sendContentError(res, err);
+      throw err;
+    }
     const lang =
       req.body.lang !== undefined ? normalizeLang(req.body.lang) : normalizeLang(existing.lang);
     const adminOnlyTopics =
@@ -97,8 +117,8 @@ export default function createSectionsRouter(store) {
       req.body.sortOrder !== undefined ? Number(req.body.sortOrder) : existing.sort_order;
 
     store.sections.update.run(
-      title,
-      description,
+      cleanTitle,
+      cleanDescription,
       lang,
       adminOnlyTopics ? 1 : 0,
       sortOrder,
@@ -115,14 +135,22 @@ export default function createSectionsRouter(store) {
     if (!section) {
       return res.status(404).json({ error: 'Section not found' });
     }
+    const { offset, limit } = parseWindow(req.query, { defaultLimit: 20 });
     let starredIds = null;
     if (req.user) {
       starredIds = new Set(
         store.stars.listUserStarsForTopics.all(req.user.id).map((r) => r.target_id),
       );
     }
-    const topics = store.topics.listBySection.all(sectionId).map((row) => mapTopic(row, starredIds));
-    return res.json({ section: mapSection(section), topics });
+    const total = store.topics.countBySection.get(sectionId)?.n ?? 0;
+    const topics = store.topics.listBySection
+      .all(sectionId, limit, offset)
+      .map((row) => mapTopic(row, starredIds));
+    return res.json({
+      section: mapSection(section),
+      topics,
+      ...windowMeta(total, offset, limit),
+    });
   });
 
   router.post('/sections/:id/topics', requireAuth, (req, res) => {
@@ -134,14 +162,22 @@ export default function createSectionsRouter(store) {
     if (section.admin_only_topics && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Only admins can create topics in this section' });
     }
-    const { title, bodyHtml = '' } = req.body || {};
-    if (!title?.trim()) {
-      return res.status(400).json({ error: 'title required' });
+    let title;
+    let bodyHtml;
+    let contentFilter;
+    try {
+      ({ title, bodyHtml, contentFilter } = validateTopicInput({
+        title: req.body?.title,
+        bodyHtml: req.body?.bodyHtml ?? '',
+      }));
+    } catch (err) {
+      if (err instanceof ContentValidationError) return sendContentError(res, err);
+      throw err;
     }
     const result = store.topics.insert.run(
       sectionId,
-      title.trim(),
-      bodyHtml || '',
+      title,
+      bodyHtml,
       req.user.id,
     );
     const topic = mapTopic(store.topics.findById.get(result.lastInsertRowid));
@@ -149,7 +185,7 @@ export default function createSectionsRouter(store) {
       type: 'topic.created',
       payload: { topicId: topic.id, sectionId },
     });
-    return res.status(201).json({ topic });
+    return res.status(201).json({ topic, contentFilter });
   });
 
   return router;

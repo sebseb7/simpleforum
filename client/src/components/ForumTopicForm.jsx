@@ -13,6 +13,14 @@ import {
   getQuillPlaceholder,
   quillFormats,
 } from '../quillSetup.js';
+import ContentFilterAlert from './ContentFilterAlert.jsx';
+import {
+  CONTENT_LIMITS,
+  contentErrorMessage,
+  isOverBodyLimit,
+  isOverTitleLimit,
+} from '../content/contentErrors.js';
+import { imageRejectMessage } from '../content/quillImageHandler.js';
 
 class ForumTopicForm extends Component {
   state = {
@@ -20,6 +28,12 @@ class ForumTopicForm extends Component {
     bodyHtml: '',
     error: null,
     submitting: false,
+    contentFilter: null,
+    imageError: null,
+  };
+
+  handleImageReject = (code) => {
+    this.setState({ imageError: imageRejectMessage(code) });
   };
 
   handleSubmit = async (e) => {
@@ -27,20 +41,41 @@ class ForumTopicForm extends Component {
     const { t } = this.props;
     const { title, bodyHtml } = this.state;
     if (!title.trim()) {
-      this.setState({ error: t('topicForm.titleRequired') });
+      this.setState({ error: t('topicForm.titleRequired'), contentFilter: null });
       return;
     }
-    this.setState({ submitting: true, error: null });
+    if (isOverTitleLimit(title)) {
+      this.setState({
+        error: contentErrorMessage({ data: { error: 'title_too_long', max: CONTENT_LIMITS.titleMax } }, t),
+        contentFilter: null,
+      });
+      return;
+    }
+    if (isOverBodyLimit(bodyHtml)) {
+      this.setState({
+        error: contentErrorMessage({ data: { error: 'body_too_large' } }, t),
+        contentFilter: null,
+      });
+      return;
+    }
+    this.setState({ submitting: true, error: null, contentFilter: null, imageError: null });
     try {
-      await this.props.createTopic({
-        sectionId: this.props.sectionId,
-        title: title.trim(),
-        bodyHtml,
-      }).unwrap();
-      this.setState({ title: '', bodyHtml: '', submitting: false });
+      const { contentFilter } = await this.props
+        .createTopic({
+          sectionId: this.props.sectionId,
+          title: title.trim(),
+          bodyHtml,
+        })
+        .unwrap();
+      this.setState({
+        title: '',
+        bodyHtml: '',
+        submitting: false,
+        contentFilter: contentFilter?.changed ? contentFilter : null,
+      });
     } catch (err) {
       this.setState({
-        error: err.message || t('topicForm.createFailed'),
+        error: contentErrorMessage(err, t) || t('topicForm.createFailed'),
         submitting: false,
       });
     }
@@ -48,18 +83,34 @@ class ForumTopicForm extends Component {
 
   render() {
     const { t, i18n } = this.props;
-    const { title, bodyHtml, error, submitting } = this.state;
+    const { title, bodyHtml, error, submitting, contentFilter, imageError } = this.state;
     return (
       <Box component="form" onSubmit={this.handleSubmit} sx={{ mt: 2 }}>
         <Typography variant="h6" gutterBottom>
           {t('topicForm.start')}
         </Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {imageError && (
+          <Alert severity="warning" sx={{ mb: 2 }} onClose={() => this.setState({ imageError: null })}>
+            {imageError}
+          </Alert>
+        )}
+        <ContentFilterAlert
+          contentFilter={contentFilter}
+          onClose={() => this.setState({ contentFilter: null })}
+          sx={{ mb: 2 }}
+        />
         <TextField
           fullWidth
           label={t('topicForm.title')}
           value={title}
           onChange={(e) => this.setState({ title: e.target.value })}
+          inputProps={{ maxLength: CONTENT_LIMITS.titleMax }}
+          helperText={`${title.trim().length}/${CONTENT_LIMITS.titleMax}`}
           sx={{ mb: 2 }}
         />
         <Box sx={{ mb: 2, bgcolor: 'background.paper' }}>
@@ -68,7 +119,7 @@ class ForumTopicForm extends Component {
             theme="snow"
             value={bodyHtml}
             onChange={(value) => this.setState({ bodyHtml: value })}
-            modules={getQuillModules()}
+            modules={getQuillModules({ onImageReject: this.handleImageReject })}
             formats={quillFormats}
             placeholder={getQuillPlaceholder()}
           />

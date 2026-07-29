@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { requireAuth } from '../auth.js';
 import { broadcast } from '../sse.js';
 import { mapPost } from './topics.js';
+import { validatePostInput } from '../content/validate.js';
+import { ContentValidationError, sendContentError } from '../content/errors.js';
 
 export default function createPostsRouter(store) {
   const router = Router();
@@ -15,9 +17,15 @@ export default function createPostsRouter(store) {
     if (topic.is_closed) {
       return res.status(403).json({ error: 'This topic is closed' });
     }
-    const { bodyHtml } = req.body || {};
-    if (!bodyHtml?.trim()) {
-      return res.status(400).json({ error: 'bodyHtml required' });
+    let bodyHtml;
+    let contentFilter;
+    try {
+      ({ bodyHtml, contentFilter } = validatePostInput({
+        bodyHtml: req.body?.bodyHtml,
+      }));
+    } catch (err) {
+      if (err instanceof ContentValidationError) return sendContentError(res, err);
+      throw err;
     }
 
     const insert = store.db.transaction(() => {
@@ -31,7 +39,7 @@ export default function createPostsRouter(store) {
       type: 'post.created',
       payload: { postId: post.id, topicId, sectionId: topic.section_id },
     });
-    return res.status(201).json({ post });
+    return res.status(201).json({ post, contentFilter });
   });
 
   router.patch('/posts/:id', requireAuth, (req, res) => {
@@ -43,9 +51,15 @@ export default function createPostsRouter(store) {
     if (postRow.author_id !== req.user.id) {
       return res.status(403).json({ error: 'Only the post author can edit it' });
     }
-    const { bodyHtml } = req.body || {};
-    if (!bodyHtml?.trim()) {
-      return res.status(400).json({ error: 'bodyHtml required' });
+    let bodyHtml;
+    let contentFilter;
+    try {
+      ({ bodyHtml, contentFilter } = validatePostInput({
+        bodyHtml: req.body?.bodyHtml,
+      }));
+    } catch (err) {
+      if (err instanceof ContentValidationError) return sendContentError(res, err);
+      throw err;
     }
     const topic = store.topics.findById.get(postRow.topic_id);
     store.posts.update.run(bodyHtml, id);
@@ -59,7 +73,7 @@ export default function createPostsRouter(store) {
         sectionId: topic?.section_id,
       },
     });
-    return res.json({ post });
+    return res.json({ post, contentFilter });
   });
 
   router.delete('/posts/:id', requireAuth, (req, res) => {

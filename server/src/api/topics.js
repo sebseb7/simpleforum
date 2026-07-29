@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { requireAuth, optionalAuth } from '../auth.js';
 import { broadcast } from '../sse.js';
 import { mapTopic } from './sections.js';
+import { parseWindow, windowMeta } from '../pagination.js';
+import { validateTopicInput } from '../content/validate.js';
+import { ContentValidationError, sendContentError } from '../content/errors.js';
 
 function mapPost(row, starredIds = null) {
   if (!row) return null;
@@ -28,6 +31,8 @@ export default function createTopicsRouter(store) {
       return res.status(404).json({ error: 'Topic not found' });
     }
 
+    const { offset, limit } = parseWindow(req.query, { defaultLimit: 50 });
+
     let topicStarred = null;
     let postStarred = null;
     if (req.user) {
@@ -40,8 +45,15 @@ export default function createTopicsRouter(store) {
     }
 
     const topic = mapTopic(topicRow, topicStarred);
-    const posts = store.posts.listByTopic.all(id).map((row) => mapPost(row, postStarred));
-    return res.json({ topic, posts });
+    const total = store.posts.countByTopic.get(id)?.n ?? 0;
+    const posts = store.posts.listByTopic
+      .all(id, limit, offset)
+      .map((row) => mapPost(row, postStarred));
+    return res.json({
+      topic,
+      posts,
+      ...windowMeta(total, offset, limit),
+    });
   });
 
   router.patch('/topics/:id/close', requireAuth, (req, res) => {
@@ -71,20 +83,29 @@ export default function createTopicsRouter(store) {
     if (topicRow.author_id !== req.user.id) {
       return res.status(403).json({ error: 'Only the topic author can edit it' });
     }
-    const title =
-      req.body?.title !== undefined ? String(req.body.title).trim() : topicRow.title;
-    const bodyHtml =
+    const titleIn =
+      req.body?.title !== undefined ? req.body.title : topicRow.title;
+    const bodyIn =
       req.body?.bodyHtml !== undefined ? req.body.bodyHtml : topicRow.body_html;
-    if (!title) {
-      return res.status(400).json({ error: 'title required' });
+    let title;
+    let bodyHtml;
+    let contentFilter;
+    try {
+      ({ title, bodyHtml, contentFilter } = validateTopicInput({
+        title: titleIn,
+        bodyHtml: bodyIn,
+      }));
+    } catch (err) {
+      if (err instanceof ContentValidationError) return sendContentError(res, err);
+      throw err;
     }
-    store.topics.update.run(title, bodyHtml || '', id);
+    store.topics.update.run(title, bodyHtml, id);
     const topic = mapTopic(store.topics.findById.get(id));
     broadcast({
       type: 'topic.updated',
       payload: { topicId: id, sectionId: topic.sectionId },
     });
-    return res.json({ topic });
+    return res.json({ topic, contentFilter });
   });
 
   router.delete('/topics/:id', requireAuth, (req, res) => {

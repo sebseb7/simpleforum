@@ -14,26 +14,33 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import withRouter from '../withRouter.jsx';
-import { fetchSectionTopics } from '../store/topicsSlice.js';
+import { fetchSectionTopics, TOPICS_PAGE_SIZE } from '../store/topicsSlice.js';
 import { formatForumDate } from '../i18n/formatDate.js';
 import ForumTopicForm from './ForumTopicForm.jsx';
 import ForumStarButton from './ForumStarButton.jsx';
 import ProtectedAction from './ProtectedAction.jsx';
+import ForumPagination from './ForumPagination.jsx';
 
 class ForumSection extends Component {
   componentDidMount() {
-    this.load();
+    this.load(0);
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.params.sectionId !== this.props.params.sectionId) {
-      this.load();
+      this.load(0);
     }
   }
 
-  load = () => {
+  load = (offset = this.props.listOffset || 0) => {
     const sectionId = Number(this.props.params.sectionId);
-    if (sectionId) this.props.fetchSectionTopics(sectionId);
+    if (sectionId) {
+      this.props.fetchSectionTopics({
+        sectionId,
+        offset,
+        limit: this.props.listLimit || TOPICS_PAGE_SIZE,
+      });
+    }
   };
 
   canCreateTopic = () => {
@@ -44,7 +51,18 @@ class ForumSection extends Component {
   };
 
   render() {
-    const { section, topics, listStatus, error, user, params, t } = this.props;
+    const {
+      section,
+      topics,
+      listStatus,
+      listTotal,
+      listOffset,
+      listLimit,
+      error,
+      user,
+      params,
+      t,
+    } = this.props;
     const sectionId = Number(params.sectionId);
     const ready = section?.id === sectionId && listStatus === 'succeeded';
 
@@ -73,7 +91,14 @@ class ForumSection extends Component {
               {section.description}
             </Typography>
 
-            <List disablePadding sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', mb: 3 }}>
+            <ForumPagination
+              total={listTotal}
+              offset={listOffset}
+              limit={listLimit}
+              onPageChange={this.load}
+            />
+
+            <List disablePadding sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', mb: 1 }}>
               {topics.map((topic, index) => (
                 <React.Fragment key={topic.id}>
                   {index > 0 && <Divider />}
@@ -126,6 +151,13 @@ class ForumSection extends Component {
               )}
             </List>
 
+            <ForumPagination
+              total={listTotal}
+              offset={listOffset}
+              limit={listLimit}
+              onPageChange={this.load}
+            />
+
             {this.canCreateTopic() ? (
               <ForumTopicForm sectionId={sectionId} />
             ) : section.adminOnlyTopics ? null : (
@@ -149,6 +181,9 @@ const mapStateToProps = (state, ownProps) => {
     section,
     topics: section ? state.topics.list : [],
     listStatus: section ? state.topics.listStatus : 'loading',
+    listTotal: state.topics.listTotal,
+    listOffset: state.topics.listOffset,
+    listLimit: state.topics.listLimit,
     error: state.topics.error,
     user: state.auth.user,
   };

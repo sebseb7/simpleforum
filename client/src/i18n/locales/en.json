@@ -56,6 +56,9 @@
     "noTopics": "No topics yet.",
     "signInToStart": "Sign in to start a topic."
   },
+  "pagination": {
+    "showing": "{{from}}–{{to}} of {{total}}"
+  },
   "topic": {
     "closed": "Closed",
     "authorMeta": "{{name}} · {{date}}",
@@ -97,6 +100,28 @@
     "posting": "Posting…",
     "messageRequired": "Message is required",
     "postFailed": "Failed to post"
+  },
+  "contentFilter": {
+    "title": "Some content was adjusted for safety",
+    "warnings": {
+      "html_sanitized": "Disallowed markup was removed",
+      "link_protocol_stripped": "An unsafe link was removed",
+      "image_removed": "An image was removed",
+      "image_too_large": "An image was too large and was removed (max 120 KB each)",
+      "image_type_not_allowed": "Only PNG, JPEG, GIF, or WebP images are allowed",
+      "too_many_images": "Extra images were removed (max 3 per message)",
+      "image_read_failed": "Could not read that image file"
+    },
+    "errors": {
+      "generic": "Could not save content",
+      "title_required": "Title is required",
+      "title_too_long": "Title is too long (max {{max}} characters)",
+      "description_too_long": "Description is too long (max {{max}} characters)",
+      "body_required": "Message is required",
+      "body_too_large": "Message is too large",
+      "body_text_too_long": "Message text is too long (max {{max}} characters)",
+      "empty_after_sanitize": "Message was empty after removing unsafe content"
+    }
   },
   "star": {
     "star": "Star",

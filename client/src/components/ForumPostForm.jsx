@@ -12,12 +12,21 @@ import {
   getQuillPlaceholder,
   quillFormats,
 } from '../quillSetup.js';
+import ContentFilterAlert from './ContentFilterAlert.jsx';
+import { contentErrorMessage, isOverBodyLimit } from '../content/contentErrors.js';
+import { imageRejectMessage } from '../content/quillImageHandler.js';
 
 class ForumPostForm extends Component {
   state = {
     bodyHtml: '',
     error: null,
     submitting: false,
+    contentFilter: null,
+    imageError: null,
+  };
+
+  handleImageReject = (code) => {
+    this.setState({ imageError: imageRejectMessage(code) });
   };
 
   handleSubmit = async (e) => {
@@ -25,19 +34,32 @@ class ForumPostForm extends Component {
     const { t } = this.props;
     const { bodyHtml } = this.state;
     if (!bodyHtml.replace(/<(.|\n)*?>/g, '').trim()) {
-      this.setState({ error: t('postForm.messageRequired') });
+      this.setState({ error: t('postForm.messageRequired'), contentFilter: null });
       return;
     }
-    this.setState({ submitting: true, error: null });
+    if (isOverBodyLimit(bodyHtml)) {
+      this.setState({
+        error: contentErrorMessage({ data: { error: 'body_too_large' } }, t),
+        contentFilter: null,
+      });
+      return;
+    }
+    this.setState({ submitting: true, error: null, contentFilter: null, imageError: null });
     try {
-      await this.props.createPost({
-        topicId: this.props.topicId,
-        bodyHtml,
-      }).unwrap();
-      this.setState({ bodyHtml: '', submitting: false });
+      const { contentFilter } = await this.props
+        .createPost({
+          topicId: this.props.topicId,
+          bodyHtml,
+        })
+        .unwrap();
+      this.setState({
+        bodyHtml: '',
+        submitting: false,
+        contentFilter: contentFilter?.changed ? contentFilter : null,
+      });
     } catch (err) {
       this.setState({
-        error: err.message || t('postForm.postFailed'),
+        error: contentErrorMessage(err, t) || t('postForm.postFailed'),
         submitting: false,
       });
     }
@@ -45,20 +67,34 @@ class ForumPostForm extends Component {
 
   render() {
     const { t, i18n } = this.props;
-    const { bodyHtml, error, submitting } = this.state;
+    const { bodyHtml, error, submitting, contentFilter, imageError } = this.state;
     return (
       <Box component="form" onSubmit={this.handleSubmit} sx={{ mt: 2 }}>
         <Typography variant="h6" gutterBottom>
           {t('postForm.reply')}
         </Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {imageError && (
+          <Alert severity="warning" sx={{ mb: 2 }} onClose={() => this.setState({ imageError: null })}>
+            {imageError}
+          </Alert>
+        )}
+        <ContentFilterAlert
+          contentFilter={contentFilter}
+          onClose={() => this.setState({ contentFilter: null })}
+          sx={{ mb: 2 }}
+        />
         <Box sx={{ mb: 2, bgcolor: 'background.paper' }}>
           <ReactQuill
             key={i18n.language}
             theme="snow"
             value={bodyHtml}
             onChange={(value) => this.setState({ bodyHtml: value })}
-            modules={getQuillModules()}
+            modules={getQuillModules({ onImageReject: this.handleImageReject })}
             formats={quillFormats}
             placeholder={getQuillPlaceholder()}
           />

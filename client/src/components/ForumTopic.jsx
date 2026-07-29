@@ -20,18 +20,29 @@ import {
   updateTopic,
   deleteTopic,
   clearDeletedNavigate,
+  POSTS_PAGE_SIZE,
 } from '../store/topicsSlice.js';
 import { formatForumDate } from '../i18n/formatDate.js';
 import ForumTopicMessage from './ForumTopicMessage.jsx';
 import ForumPostForm from './ForumPostForm.jsx';
 import ForumStarButton from './ForumStarButton.jsx';
 import ProtectedAction from './ProtectedAction.jsx';
+import ForumPagination from './ForumPagination.jsx';
+import ContentFilterAlert from './ContentFilterAlert.jsx';
+import ForumHtmlBody from './ForumHtmlBody.jsx';
 import {
   ReactQuill,
   getQuillModules,
   getQuillPlaceholder,
   quillFormats,
 } from '../quillSetup.js';
+import {
+  CONTENT_LIMITS,
+  contentErrorMessage,
+  isOverBodyLimit,
+  isOverTitleLimit,
+} from '../content/contentErrors.js';
+import { imageRejectMessage } from '../content/quillImageHandler.js';
 
 class ForumTopic extends Component {
   state = {
@@ -40,16 +51,18 @@ class ForumTopic extends Component {
     editBodyHtml: '',
     editError: null,
     saving: false,
+    contentFilter: null,
+    imageError: null,
   };
 
   componentDidMount() {
-    this.load();
+    this.load(0);
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.params.topicId !== this.props.params.topicId) {
       this.setState({ editing: false, editError: null });
-      this.load();
+      this.load(0);
     }
     if (this.props.deletedNavigate) {
       const { sectionId } = this.props.deletedNavigate;
@@ -58,9 +71,15 @@ class ForumTopic extends Component {
     }
   }
 
-  load = () => {
+  load = (offset = this.props.postsOffset || 0) => {
     const topicId = Number(this.props.params.topicId);
-    if (topicId) this.props.fetchTopic(topicId);
+    if (topicId) {
+      this.props.fetchTopic({
+        topicId,
+        offset,
+        limit: this.props.postsLimit || POSTS_PAGE_SIZE,
+      });
+    }
   };
 
   handleClose = () => {
@@ -82,11 +101,17 @@ class ForumTopic extends Component {
       editTitle: topic.title,
       editBodyHtml: topic.bodyHtml || '',
       editError: null,
+      contentFilter: null,
+      imageError: null,
     });
   };
 
   cancelEdit = () => {
-    this.setState({ editing: false, editError: null });
+    this.setState({ editing: false, editError: null, imageError: null });
+  };
+
+  handleImageReject = (code) => {
+    this.setState({ imageError: imageRejectMessage(code) });
   };
 
   saveEdit = async () => {
@@ -96,27 +121,58 @@ class ForumTopic extends Component {
       this.setState({ editError: t('topic.titleRequired') });
       return;
     }
-    this.setState({ saving: true, editError: null });
+    if (isOverTitleLimit(editTitle)) {
+      this.setState({
+        editError: contentErrorMessage(
+          { data: { error: 'title_too_long', max: CONTENT_LIMITS.titleMax } },
+          t,
+        ),
+      });
+      return;
+    }
+    if (isOverBodyLimit(editBodyHtml)) {
+      this.setState({
+        editError: contentErrorMessage({ data: { error: 'body_too_large' } }, t),
+      });
+      return;
+    }
+    this.setState({ saving: true, editError: null, imageError: null });
     try {
-      await this.props
+      const { contentFilter } = await this.props
         .updateTopic({
           topicId: this.props.topic.id,
           title: editTitle.trim(),
           bodyHtml: editBodyHtml,
         })
         .unwrap();
-      this.setState({ editing: false, saving: false });
+      this.setState({
+        editing: false,
+        saving: false,
+        contentFilter: contentFilter?.changed ? contentFilter : null,
+      });
     } catch (err) {
       this.setState({
-        editError: err.message || t('topic.updateFailed'),
+        editError: contentErrorMessage(err, t) || t('topic.updateFailed'),
         saving: false,
       });
     }
   };
 
   render() {
-    const { topic, posts, error, user, params, t, i18n } = this.props;
-    const { editing, editTitle, editBodyHtml, editError, saving } = this.state;
+    const {
+      topic,
+      posts,
+      postsTotal,
+      postsOffset,
+      postsLimit,
+      error,
+      user,
+      params,
+      t,
+      i18n,
+    } = this.props;
+    const { editing, editTitle, editBodyHtml, editError, saving, contentFilter, imageError } =
+      this.state;
     const topicId = Number(params.topicId);
     const ready = topic?.id === topicId;
     const isAuthor = user && ready && user.id === topic.authorId;
@@ -160,6 +216,8 @@ class ForumTopic extends Component {
                     label={t('topic.title')}
                     value={editTitle}
                     onChange={(e) => this.setState({ editTitle: e.target.value })}
+                    inputProps={{ maxLength: CONTENT_LIMITS.titleMax }}
+                    helperText={`${editTitle.trim().length}/${CONTENT_LIMITS.titleMax}`}
                     sx={{ mb: 1 }}
                   />
                 ) : (
@@ -210,6 +268,20 @@ class ForumTopic extends Component {
                 {editError}
               </Alert>
             )}
+            {imageError && (
+              <Alert
+                severity="warning"
+                sx={{ mb: 2 }}
+                onClose={() => this.setState({ imageError: null })}
+              >
+                {imageError}
+              </Alert>
+            )}
+            <ContentFilterAlert
+              contentFilter={contentFilter}
+              onClose={() => this.setState({ contentFilter: null })}
+              sx={{ mb: 2 }}
+            />
 
             {editing ? (
               <Box sx={{ mb: 3 }}>
@@ -219,7 +291,7 @@ class ForumTopic extends Component {
                     theme="snow"
                     value={editBodyHtml}
                     onChange={(value) => this.setState({ editBodyHtml: value })}
-                    modules={getQuillModules()}
+                    modules={getQuillModules({ onImageReject: this.handleImageReject })}
                     formats={quillFormats}
                     placeholder={getQuillPlaceholder()}
                   />
@@ -236,20 +308,13 @@ class ForumTopic extends Component {
             ) : (
               topic.bodyHtml && (
                 <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'background.paper' }}>
-                  <Box
-                    sx={{ '& p': { m: 0, mb: 1 }, '& img': { maxWidth: '100%' } }}
-                    dangerouslySetInnerHTML={{ __html: topic.bodyHtml }}
-                  />
+                  <ForumHtmlBody html={topic.bodyHtml} />
                 </Paper>
               )
             )}
 
-            {posts.map((post) => (
-              <ForumTopicMessage key={post.id} post={post} />
-            ))}
-
             {topic.isClosed ? (
-              <Alert severity="info" sx={{ mt: 2 }}>
+              <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
                 {t('topic.isClosed')}
               </Alert>
             ) : (
@@ -257,6 +322,24 @@ class ForumTopic extends Component {
                 <ForumPostForm topicId={topic.id} />
               </ProtectedAction>
             )}
+
+            <ForumPagination
+              total={postsTotal}
+              offset={postsOffset}
+              limit={postsLimit}
+              onPageChange={this.load}
+            />
+
+            {posts.map((post) => (
+              <ForumTopicMessage key={post.id} post={post} />
+            ))}
+
+            <ForumPagination
+              total={postsTotal}
+              offset={postsOffset}
+              limit={postsLimit}
+              onPageChange={this.load}
+            />
           </>
         )}
       </Box>
@@ -277,6 +360,12 @@ const mapStateToProps = (state, ownProps) => {
       ? { ...topic, sectionTitle: sectionTitle || topic.sectionTitle }
       : null,
     posts: topic ? state.posts.byTopicId[topicId] || [] : [],
+    postsTotal: state.posts.window?.topicId === topicId ? state.posts.window.total : 0,
+    postsOffset: state.posts.window?.topicId === topicId ? state.posts.window.offset : 0,
+    postsLimit:
+      state.posts.window?.topicId === topicId
+        ? state.posts.window.limit
+        : 50,
     error: state.topics.error,
     user: state.auth.user,
     deletedNavigate: state.topics.deletedNavigate,

@@ -56,6 +56,9 @@
     "noTopics": "Noch keine Themen.",
     "signInToStart": "Melden Sie sich an, um ein Thema zu starten."
   },
+  "pagination": {
+    "showing": "{{from}}–{{to}} von {{total}}"
+  },
   "topic": {
     "closed": "Geschlossen",
     "authorMeta": "{{name}} · {{date}}",
@@ -97,6 +100,28 @@
     "posting": "Wird gesendet…",
     "messageRequired": "Nachricht ist erforderlich",
     "postFailed": "Antwort konnte nicht gesendet werden"
+  },
+  "contentFilter": {
+    "title": "Einige Inhalte wurden aus Sicherheitsgründen angepasst",
+    "warnings": {
+      "html_sanitized": "Unzulässiges Markup wurde entfernt",
+      "link_protocol_stripped": "Ein unsicherer Link wurde entfernt",
+      "image_removed": "Ein Bild wurde entfernt",
+      "image_too_large": "Ein Bild war zu groß und wurde entfernt (max. 120 KB je Bild)",
+      "image_type_not_allowed": "Nur PNG-, JPEG-, GIF- oder WebP-Bilder sind erlaubt",
+      "too_many_images": "Zusätzliche Bilder wurden entfernt (max. 3 pro Nachricht)",
+      "image_read_failed": "Die Bilddatei konnte nicht gelesen werden"
+    },
+    "errors": {
+      "generic": "Inhalt konnte nicht gespeichert werden",
+      "title_required": "Titel ist erforderlich",
+      "title_too_long": "Titel ist zu lang (max. {{max}} Zeichen)",
+      "description_too_long": "Beschreibung ist zu lang (max. {{max}} Zeichen)",
+      "body_required": "Nachricht ist erforderlich",
+      "body_too_large": "Nachricht ist zu groß",
+      "body_text_too_long": "Nachrichtentext ist zu lang (max. {{max}} Zeichen)",
+      "empty_after_sanitize": "Nachricht war nach dem Entfernen unsicherer Inhalte leer"
+    }
   },
   "star": {
     "star": "Stern",

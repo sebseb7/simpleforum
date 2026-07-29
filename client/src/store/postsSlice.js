@@ -1,20 +1,24 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api.js';
-import { fetchTopic } from './topicsSlice.js';
+import { fetchTopic, POSTS_PAGE_SIZE } from './topicsSlice.js';
 
 export const createPost = createAsyncThunk(
   'posts/create',
-  async ({ topicId, bodyHtml }) => {
-    const { post } = await api.createPost(topicId, { bodyHtml });
-    return post;
+  async ({ topicId, bodyHtml }, { dispatch, getState }) => {
+    const data = await api.createPost(topicId, { bodyHtml });
+    const win = getState().posts.window;
+    const limit = win?.topicId === topicId ? win.limit : POSTS_PAGE_SIZE;
+    // Newest-first: land on the first page so the new reply is visible.
+    await dispatch(fetchTopic({ topicId, offset: 0, limit }));
+    return data;
   },
 );
 
 export const updatePost = createAsyncThunk(
   'posts/update',
   async ({ postId, bodyHtml }) => {
-    const { post } = await api.updatePost(postId, { bodyHtml });
-    return post;
+    const data = await api.updatePost(postId, { bodyHtml });
+    return data;
   },
 );
 
@@ -27,6 +31,7 @@ const postsSlice = createSlice({
   name: 'posts',
   initialState: {
     byTopicId: {},
+    window: null, // { topicId, total, offset, limit }
     status: 'idle',
     error: null,
   },
@@ -53,26 +58,30 @@ const postsSlice = createSlice({
       const list = state.byTopicId[topicId];
       if (!list) return;
       state.byTopicId[topicId] = list.filter((p) => p.id !== postId);
+      if (state.window?.topicId === topicId && state.window.total > 0) {
+        state.window.total -= 1;
+      }
     },
     clearTopicPosts(state, action) {
       delete state.byTopicId[action.payload];
+      if (state.window?.topicId === action.payload) state.window = null;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchTopic.fulfilled, (state, action) => {
-        state.byTopicId[action.payload.topic.id] = action.payload.posts;
+        const topicId = action.payload.topic.id;
+        state.byTopicId[topicId] = action.payload.posts;
+        state.window = {
+          topicId,
+          total: action.payload.total ?? 0,
+          offset: action.payload.offset ?? 0,
+          limit: action.payload.limit ?? POSTS_PAGE_SIZE,
+        };
         state.status = 'succeeded';
       })
-      .addCase(createPost.fulfilled, (state, action) => {
-        const topicId = action.payload.topicId;
-        const list = state.byTopicId[topicId] || [];
-        if (!list.some((p) => p.id === action.payload.id)) {
-          state.byTopicId[topicId] = [...list, action.payload];
-        }
-      })
       .addCase(updatePost.fulfilled, (state, action) => {
-        const post = action.payload;
+        const post = action.payload.post;
         const list = state.byTopicId[post.topicId];
         if (!list) return;
         const idx = list.findIndex((p) => p.id === post.id);
@@ -83,6 +92,9 @@ const postsSlice = createSlice({
         const list = state.byTopicId[topicId];
         if (!list) return;
         state.byTopicId[topicId] = list.filter((p) => p.id !== postId);
+        if (state.window?.topicId === topicId && state.window.total > 0) {
+          state.window.total -= 1;
+        }
       });
   },
 });

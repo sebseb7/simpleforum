@@ -71,8 +71,12 @@ const api = {
     return request(`/sections/${id}`, { method: 'PATCH', body: payload });
   },
 
-  getSectionTopics(sectionId) {
-    return request(`/sections/${sectionId}/topics`);
+  getSectionTopics(sectionId, { offset = 0, limit = 20 } = {}) {
+    const q = new URLSearchParams({
+      offset: String(offset),
+      limit: String(limit),
+    });
+    return request(`/sections/${sectionId}/topics?${q}`);
   },
 
   createTopic(sectionId, payload) {
@@ -82,8 +86,12 @@ const api = {
     });
   },
 
-  getTopic(topicId) {
-    return request(`/topics/${topicId}`);
+  getTopic(topicId, { offset = 0, limit = 50 } = {}) {
+    const q = new URLSearchParams({
+      offset: String(offset),
+      limit: String(limit),
+    });
+    return request(`/topics/${topicId}?${q}`);
   },
 
   closeTopic(topicId) {

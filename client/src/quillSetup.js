@@ -2,6 +2,7 @@ import ReactQuill, { Quill } from 'react-quill-new';
 import QuillResizeImage from 'quill-resize-image';
 import 'react-quill-new/dist/quill.snow.css';
 import i18n from './i18n/index.js';
+import { createImageHandler } from './content/quillImageHandler.js';
 
 Quill.register('modules/resize', QuillResizeImage);
 
@@ -29,10 +30,18 @@ const toolbar = [
   ['clean'],
 ];
 
-/** Quill modules with resize labels from the active language file. */
-export function getQuillModules() {
+/**
+ * Quill modules with resize labels from the active language file.
+ * @param {{ onImageReject?: (code: string) => void }} [options]
+ */
+export function getQuillModules(options = {}) {
   return {
-    toolbar,
+    toolbar: {
+      container: toolbar,
+      handlers: {
+        image: createImageHandler(options.onImageReject),
+      },
+    },
     resize: {
       locale: {
         altTip: i18n.t('quill.resize.altTip'),
