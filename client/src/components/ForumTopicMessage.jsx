@@ -12,15 +12,10 @@ import ForumStarButton from './ForumStarButton.jsx';
 import ContentFilterAlert from './ContentFilterAlert.jsx';
 import { updatePost, deletePost } from '../store/postsSlice.js';
 import { formatForumDate } from '../i18n/formatDate.js';
-import {
-  ReactQuill,
-  getQuillModules,
-  getQuillPlaceholder,
-  quillFormats,
-} from '../quillSetup.js';
 import { contentErrorMessage, isOverBodyLimit } from '../content/contentErrors.js';
 import { imageRejectMessage } from '../content/quillImageHandler.js';
 import ForumHtmlBody from './ForumHtmlBody.jsx';
+import ForumQuillEditor from './ForumQuillEditor.jsx';
 
 class ForumTopicMessage extends Component {
   state = {
@@ -105,7 +100,7 @@ class ForumTopicMessage extends Component {
               direction="row"
               sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}
             >
-              <Typography variant="subtitle2">{post.authorName}</Typography>
+              <Typography component="p" variant="subtitle2">{post.authorName}</Typography>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <Typography variant="caption" color="text.secondary">
                   {formatForumDate(post.createdAt)}
@@ -152,14 +147,11 @@ class ForumTopicMessage extends Component {
             {editing ? (
               <Box>
                 <Box sx={{ mb: 1, bgcolor: 'background.paper' }}>
-                  <ReactQuill
+                  <ForumQuillEditor
                     key={i18n.language}
-                    theme="snow"
                     value={editBodyHtml}
                     onChange={(value) => this.setState({ editBodyHtml: value })}
-                    modules={getQuillModules({ onImageReject: this.handleImageReject })}
-                    formats={quillFormats}
-                    placeholder={getQuillPlaceholder()}
+                    onImageReject={this.handleImageReject}
                   />
                 </Box>
                 <Stack direction="row" spacing={1}>

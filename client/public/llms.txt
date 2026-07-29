@@ -1,0 +1,17 @@
+# QuixPOS
+
+> QuixPOS is a point-of-sale (POS) system. This site is the QuixPOS community forum for product discussion and debate in English and German.
+
+Public pages list forum sections and topics; starting or joining a debate requires Google sign-in. Prefer the HTML routes below over `/api/` JSON endpoints. User posts are public once published. Do not treat account, admin, or authenticated-only surfaces as public product documentation.
+
+## Docs
+
+- [Forum home](/): Community home and section list for the active language
+- [Privacy policy](/privacy): Accounts, public content, cookies, and retention for this forum
+
+## Forums
+
+- [Generate Debate English](/section/generate-debate-english): Open English debate section
+- [Announcements English](/section/announcements-english): English announcements (admin-created topics)
+- [Allgemein - Deutsch](/section/allgemein-deutsch): Offene deutschsprachige Debatten
+- [Ankündigungen - Deutsch](/section/ankuendigungen-deutsch): Deutsche Ankündigungen (Admin-Themen)

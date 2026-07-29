@@ -1,8 +1,11 @@
 import React from 'react';
-import parse from 'html-react-parser';
+import parse, { domToReact, attributesToProps } from 'html-react-parser';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import { sanitizeForDisplay } from '../content/sanitizeForDisplay.js';
+
+/** User HTML may contain h1–h3; nest them under the page outline (h1/h2). */
+const HEADING_DEMOTE = { h1: 'h3', h2: 'h4', h3: 'h5' };
 
 const bodySx = {
   '& p': { m: 0, mb: 1 },
@@ -38,23 +41,35 @@ export default function ForumHtmlBody({ html, className, sx }) {
   const safe = sanitizeForDisplay(html);
   if (!safe) return null;
 
-  const nodes = parse(safe, {
+  const options = {
     replace(domNode) {
       const kind = domNode.attribs?.['data-forum-placeholder'];
-      if (!kind) return undefined;
-      const label =
-        kind === 'image' ? t('content.anonImage') : t('content.anonLink');
-      return (
-        <span className="forum-anon-placeholder" data-forum-placeholder={kind}>
-          {label}
-        </span>
-      );
+      if (kind) {
+        const label =
+          kind === 'image' ? t('content.anonImage') : t('content.anonLink');
+        return (
+          <span className="forum-anon-placeholder" data-forum-placeholder={kind}>
+            {label}
+          </span>
+        );
+      }
+
+      const demoted = HEADING_DEMOTE[domNode.name];
+      if (demoted && Array.isArray(domNode.children)) {
+        return React.createElement(
+          demoted,
+          attributesToProps(domNode.attribs || {}),
+          domToReact(domNode.children, options),
+        );
+      }
+
+      return undefined;
     },
-  });
+  };
 
   return (
     <Box className={className} sx={{ ...bodySx, ...sx }}>
-      {nodes}
+      {parse(safe, options)}
     </Box>
   );
 }

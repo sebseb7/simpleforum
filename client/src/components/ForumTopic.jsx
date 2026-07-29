@@ -31,12 +31,6 @@ import ForumPagination from './ForumPagination.jsx';
 import ContentFilterAlert from './ContentFilterAlert.jsx';
 import ForumHtmlBody from './ForumHtmlBody.jsx';
 import {
-  ReactQuill,
-  getQuillModules,
-  getQuillPlaceholder,
-  quillFormats,
-} from '../quillSetup.js';
-import {
   CONTENT_LIMITS,
   contentErrorMessage,
   isOverBodyLimit,
@@ -44,6 +38,7 @@ import {
 } from '../content/contentErrors.js';
 import { imageRejectMessage } from '../content/quillImageHandler.js';
 import DocumentMeta from './DocumentMeta.jsx';
+import ForumQuillEditor from './ForumQuillEditor.jsx';
 
 function plainTextFromHtml(html) {
   return String(html || '')
@@ -243,7 +238,7 @@ class ForumTopic extends Component {
                   />
                 ) : (
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
-                    <Typography variant="h4">{topic.title}</Typography>
+                    <Typography component="h1" variant="h4">{topic.title}</Typography>
                     {topic.isClosed && <Chip label={t('topic.closed')} size="small" />}
                   </Stack>
                 )}
@@ -307,14 +302,11 @@ class ForumTopic extends Component {
             {editing ? (
               <Box sx={{ mb: 3 }}>
                 <Box sx={{ mb: 2, bgcolor: 'background.paper' }}>
-                  <ReactQuill
+                  <ForumQuillEditor
                     key={i18n.language}
-                    theme="snow"
                     value={editBodyHtml}
                     onChange={(value) => this.setState({ editBodyHtml: value })}
-                    modules={getQuillModules({ onImageReject: this.handleImageReject })}
-                    formats={quillFormats}
-                    placeholder={getQuillPlaceholder()}
+                    onImageReject={this.handleImageReject}
                   />
                 </Box>
                 <Stack direction="row" spacing={1}>

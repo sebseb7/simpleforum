@@ -4,9 +4,9 @@ import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import { fetchMyStars } from '../store/starsSlice.js';
@@ -34,7 +34,7 @@ class StarredPage extends Component {
       return (
         <Box>
           <DocumentMeta title={t('starred.title')} />
-          <Typography variant="h4" gutterBottom>
+          <Typography component="h1" variant="h4" gutterBottom>
             {t('starred.title')}
           </Typography>
           <ProtectedAction user={null} message={t('starred.signIn')} />
@@ -45,18 +45,20 @@ class StarredPage extends Component {
     return (
       <Box>
         <DocumentMeta title={t('starred.title')} />
-        <Typography variant="h4" gutterBottom>
+        <Typography component="h1" variant="h4" gutterBottom>
           {t('starred.title')}
         </Typography>
         {error && <Alert severity="error">{error}</Alert>}
 
-        <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+        <Typography component="h2" variant="h6" sx={{ mt: 2, mb: 1 }}>
           {t('starred.topics')}
         </Typography>
-        <List sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', mb: 3 }}>
+        <List
+          disablePadding
+          sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', mb: 3 }}
+        >
           {topics.map((topic, index) => (
-            <React.Fragment key={topic.id}>
-              {index > 0 && <Divider />}
+            <ListItem key={topic.id} disablePadding divider={index < topics.length - 1}>
               <ListItemButton component={RouterLink} to={`/topic/${topic.slug}`}>
                 <ListItemText
                   primary={topic.title}
@@ -66,22 +68,27 @@ class StarredPage extends Component {
                   })}
                 />
               </ListItemButton>
-            </React.Fragment>
+            </ListItem>
           ))}
           {status === 'succeeded' && topics.length === 0 && (
-            <Box sx={{ p: 2 }}>
-              <Typography color="text.secondary">{t('starred.noTopics')}</Typography>
-            </Box>
+            <ListItem sx={{ py: 2 }}>
+              <ListItemText
+                primary={t('starred.noTopics')}
+                slotProps={{ primary: { color: 'text.secondary' } }}
+              />
+            </ListItem>
           )}
         </List>
 
-        <Typography variant="h6" sx={{ mb: 1 }}>
+        <Typography component="h2" variant="h6" sx={{ mb: 1 }}>
           {t('starred.posts')}
         </Typography>
-        <List sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+        <List
+          disablePadding
+          sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}
+        >
           {posts.map((post, index) => (
-            <React.Fragment key={post.id}>
-              {index > 0 && <Divider />}
+            <ListItem key={post.id} disablePadding divider={index < posts.length - 1}>
               <ListItemButton component={RouterLink} to={`/topic/${post.topicSlug}`}>
                 <ListItemText
                   primary={t('starred.postBy', { name: post.authorName })}
@@ -91,12 +98,15 @@ class StarredPage extends Component {
                   })}
                 />
               </ListItemButton>
-            </React.Fragment>
+            </ListItem>
           ))}
           {status === 'succeeded' && posts.length === 0 && (
-            <Box sx={{ p: 2 }}>
-              <Typography color="text.secondary">{t('starred.noPosts')}</Typography>
-            </Box>
+            <ListItem sx={{ py: 2 }}>
+              <ListItemText
+                primary={t('starred.noPosts')}
+                slotProps={{ primary: { color: 'text.secondary' } }}
+              />
+            </ListItem>
           )}
         </List>
       </Box>

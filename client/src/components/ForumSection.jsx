@@ -6,9 +6,9 @@ import Typography from '@mui/material/Typography';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Link from '@mui/material/Link';
 import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -86,7 +86,7 @@ class ForumSection extends Component {
         {ready && (
           <>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
-              <Typography variant="h4">{section.title}</Typography>
+              <Typography component="h1" variant="h4">{section.title}</Typography>
               {section.adminOnlyTopics && (
                 <Chip size="small" label={t('section.adminCreatesTopics')} variant="outlined" />
               )}
@@ -104,17 +104,35 @@ class ForumSection extends Component {
 
             <List disablePadding sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', mb: 1 }}>
               {topics.map((topic, index) => (
-                <React.Fragment key={topic.id}>
-                  {index > 0 && <Divider />}
+                <ListItem
+                  key={topic.id}
+                  disablePadding
+                  divider={index < topics.length - 1}
+                  secondaryAction={
+                    <ForumStarButton
+                      targetType="topic"
+                      targetId={topic.id}
+                      starredByMe={topic.starredByMe}
+                      starCount={topic.starCount}
+                    />
+                  }
+                  sx={{
+                    '& .MuiListItemSecondaryAction-root': {
+                      right: 8,
+                      top: 12,
+                      transform: 'none',
+                    },
+                  }}
+                >
                   <ListItemButton
                     component={RouterLink}
                     to={`/topic/${topic.slug}`}
-                    sx={{ py: 1.5, alignItems: 'flex-start' }}
+                    sx={{ py: 1.5, alignItems: 'flex-start', pr: 8 }}
                   >
                     <ListItemText
                       primary={
                         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                          <Typography variant="subtitle1" fontWeight={600}>
+                          <Typography component="h2" variant="subtitle1" fontWeight={600}>
                             {topic.title}
                           </Typography>
                           {topic.isClosed && (
@@ -132,26 +150,16 @@ class ForumSection extends Component {
                         </Typography>
                       }
                     />
-                    <Box
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
-                      <ForumStarButton
-                        targetType="topic"
-                        targetId={topic.id}
-                        starredByMe={topic.starredByMe}
-                        starCount={topic.starCount}
-                      />
-                    </Box>
                   </ListItemButton>
-                </React.Fragment>
+                </ListItem>
               ))}
               {topics.length === 0 && (
-                <Box sx={{ p: 3 }}>
-                  <Typography color="text.secondary">{t('section.noTopics')}</Typography>
-                </Box>
+                <ListItem sx={{ py: 3 }}>
+                  <ListItemText
+                    primary={t('section.noTopics')}
+                    slotProps={{ primary: { color: 'text.secondary' } }}
+                  />
+                </ListItem>
               )}
             </List>
 

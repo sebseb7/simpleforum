@@ -13,7 +13,6 @@ import Alert from '@mui/material/Alert';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import { fetchSections, createSection, updateSection } from '../store/sectionsSlice.js';
 import DocumentMeta from './DocumentMeta.jsx';
@@ -109,7 +108,7 @@ class AdminSections extends Component {
     return (
       <Box>
         <DocumentMeta title={t('admin.title')} description={t('admin.blurb')} />
-        <Typography variant="h4" gutterBottom>
+        <Typography component="h1" variant="h4" gutterBottom>
           {t('admin.title')}
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>
@@ -172,38 +171,40 @@ class AdminSections extends Component {
           </Stack>
         </Box>
 
-        <List sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+        <List
+          disablePadding
+          sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}
+        >
           {sections.map((section, index) => (
-            <React.Fragment key={section.id}>
-              {index > 0 && <Divider />}
-              <ListItem
-                secondaryAction={
-                  <Button size="small" onClick={() => this.startEdit(section)}>
-                    {t('admin.edit')}
-                  </Button>
+            <ListItem
+              key={section.id}
+              divider={index < sections.length - 1}
+              secondaryAction={
+                <Button size="small" onClick={() => this.startEdit(section)}>
+                  {t('admin.edit')}
+                </Button>
+              }
+            >
+              <ListItemText
+                primary={
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <span>
+                      {section.title}
+                      {section.adminOnlyTopics ? t('admin.adminTopicsSuffix') : ''}
+                    </span>
+                    <Chip
+                      size="small"
+                      label={(section.lang || 'en').toUpperCase()}
+                      variant="outlined"
+                    />
+                  </Stack>
                 }
-              >
-                <ListItemText
-                  primary={
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <span>
-                        {section.title}
-                        {section.adminOnlyTopics ? t('admin.adminTopicsSuffix') : ''}
-                      </span>
-                      <Chip
-                        size="small"
-                        label={(section.lang || 'en').toUpperCase()}
-                        variant="outlined"
-                      />
-                    </Stack>
-                  }
-                  secondary={section.description || '—'}
-                  slotProps={{
-                    primary: { component: 'div' },
-                  }}
-                />
-              </ListItem>
-            </React.Fragment>
+                secondary={section.description || '—'}
+                slotProps={{
+                  primary: { component: 'div' },
+                }}
+              />
+            </ListItem>
           ))}
         </List>
       </Box>

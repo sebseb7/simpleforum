@@ -6,15 +6,10 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { createPost } from '../store/postsSlice.js';
-import {
-  ReactQuill,
-  getQuillModules,
-  getQuillPlaceholder,
-  quillFormats,
-} from '../quillSetup.js';
 import ContentFilterAlert from './ContentFilterAlert.jsx';
 import { contentErrorMessage, isOverBodyLimit } from '../content/contentErrors.js';
 import { imageRejectMessage } from '../content/quillImageHandler.js';
+import ForumQuillEditor from './ForumQuillEditor.jsx';
 
 class ForumPostForm extends Component {
   state = {
@@ -70,7 +65,7 @@ class ForumPostForm extends Component {
     const { bodyHtml, error, submitting, contentFilter, imageError } = this.state;
     return (
       <Box component="form" onSubmit={this.handleSubmit} sx={{ mt: 2 }}>
-        <Typography variant="h6" gutterBottom>
+        <Typography component="h2" variant="h6" gutterBottom>
           {t('postForm.reply')}
         </Typography>
         {error && (
@@ -89,14 +84,11 @@ class ForumPostForm extends Component {
           sx={{ mb: 2 }}
         />
         <Box sx={{ mb: 2, bgcolor: 'background.paper' }}>
-          <ReactQuill
+          <ForumQuillEditor
             key={i18n.language}
-            theme="snow"
             value={bodyHtml}
             onChange={(value) => this.setState({ bodyHtml: value })}
-            modules={getQuillModules({ onImageReject: this.handleImageReject })}
-            formats={quillFormats}
-            placeholder={getQuillPlaceholder()}
+            onImageReject={this.handleImageReject}
           />
         </Box>
         <Button type="submit" variant="contained" disabled={submitting}>

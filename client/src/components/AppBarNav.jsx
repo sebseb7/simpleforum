@@ -316,7 +316,7 @@ class AppBarNav extends Component {
                   },
                 }}
               >
-                <Typography variant="subtitle1" fontWeight={600}>
+                <Typography component="p" variant="subtitle1" fontWeight={600}>
                   {user.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
@@ -327,7 +327,7 @@ class AppBarNav extends Component {
                 </Button>
 
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="subtitle2" gutterBottom>
+                <Typography component="p" variant="subtitle2" gutterBottom>
                   {t('account.settings')}
                 </Typography>
                 <TextField
@@ -385,7 +385,7 @@ class AppBarNav extends Component {
                 )}
 
                 <Divider sx={{ mb: 2, mt: 1 }} />
-                <Typography variant="subtitle2" color="error" gutterBottom>
+                <Typography component="p" variant="subtitle2" color="error" gutterBottom>
                   {t('account.deleteAccount')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>

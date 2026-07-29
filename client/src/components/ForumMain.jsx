@@ -4,9 +4,9 @@ import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -39,7 +39,7 @@ class ForumMain extends Component {
     return (
       <Box>
         <DocumentMeta title={t('home.welcome')} description={t('home.blurb')} />
-        <Typography variant="h3" gutterBottom>
+        <Typography component="h1" variant="h3" gutterBottom>
           {t('home.welcome')}
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 520 }}>
@@ -50,8 +50,11 @@ class ForumMain extends Component {
 
         <List disablePadding sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
           {sections.map((section, index) => (
-            <React.Fragment key={section.id}>
-              {index > 0 && <Divider />}
+            <ListItem
+              key={section.id}
+              disablePadding
+              divider={index < sections.length - 1}
+            >
               <ListItemButton
                 component={RouterLink}
                 to={`/section/${section.slug}`}
@@ -60,7 +63,7 @@ class ForumMain extends Component {
                 <ListItemText
                   primary={
                     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <Typography variant="h6">{section.title}</Typography>
+                      <Typography component="h2" variant="h6">{section.title}</Typography>
                       {section.adminOnlyTopics && (
                         <Chip size="small" label={t('home.adminTopics')} variant="outlined" />
                       )}
@@ -79,12 +82,15 @@ class ForumMain extends Component {
                   }}
                 />
               </ListItemButton>
-            </React.Fragment>
+            </ListItem>
           ))}
           {status === 'succeeded' && sections.length === 0 && (
-            <Box sx={{ p: 3 }}>
-              <Typography color="text.secondary">{t('home.noSections')}</Typography>
-            </Box>
+            <ListItem sx={{ py: 3 }}>
+              <ListItemText
+                primary={t('home.noSections')}
+                slotProps={{ primary: { color: 'text.secondary' } }}
+              />
+            </ListItem>
           )}
         </List>
       </Box>

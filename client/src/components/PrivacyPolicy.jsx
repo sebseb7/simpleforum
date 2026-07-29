@@ -20,18 +20,18 @@ class PrivacyPolicy extends Component {
           <Typography color="text.primary">{t('privacy.title')}</Typography>
         </Breadcrumbs>
 
-        <Typography variant="h3" gutterBottom>
+        <Typography component="h1" variant="h3" gutterBottom>
           {t('privacy.title')}
         </Typography>
 
         <Typography paragraph>{t('privacy.intro')}</Typography>
 
-        <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
+        <Typography component="h2" variant="h5" gutterBottom sx={{ mt: 3 }}>
           {t('privacy.publicTitle')}
         </Typography>
         <Typography paragraph>{t('privacy.publicBody')}</Typography>
 
-        <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
+        <Typography component="h2" variant="h5" gutterBottom sx={{ mt: 3 }}>
           {t('privacy.googleTitle')}
         </Typography>
         <Typography paragraph>{t('privacy.googleBody1')}</Typography>
@@ -47,7 +47,7 @@ class PrivacyPolicy extends Component {
           {t('privacy.googleBody2After')}
         </Typography>
 
-        <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
+        <Typography component="h2" variant="h5" gutterBottom sx={{ mt: 3 }}>
           {t('privacy.storeTitle')}
         </Typography>
         <Typography component="div" paragraph>
@@ -60,17 +60,17 @@ class PrivacyPolicy extends Component {
           </Box>
         </Typography>
 
-        <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
+        <Typography component="h2" variant="h5" gutterBottom sx={{ mt: 3 }}>
           {t('privacy.cookiesTitle')}
         </Typography>
         <Typography paragraph>{t('privacy.cookiesBody')}</Typography>
 
-        <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
+        <Typography component="h2" variant="h5" gutterBottom sx={{ mt: 3 }}>
           {t('privacy.retentionTitle')}
         </Typography>
         <Typography paragraph>{t('privacy.retentionBody')}</Typography>
 
-        <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
+        <Typography component="h2" variant="h5" gutterBottom sx={{ mt: 3 }}>
           {t('privacy.contactTitle')}
         </Typography>
         <Typography paragraph>
