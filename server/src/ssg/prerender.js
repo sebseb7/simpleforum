@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
@@ -6,6 +7,7 @@ import { loadPageData, listPrerenderPaths } from './loadPageData.js';
 import { materializeOgImage } from './pageMeta.js';
 import { jsonLdScriptTag, jsonLdTopic } from './jsonLd.js';
 import { writeSitemap } from './sitemap.js';
+import { materializeStateBodyImages } from './materializeBodyImages.js';
 
 function escapeHtml(str) {
   return String(str || '')
@@ -23,7 +25,26 @@ function urlToFilePath(distDir, urlPath) {
   return path.join(distDir, clean.replace(/^\//, ''), 'index.html');
 }
 
-function injectHtml(template, { appHtml, emotionCss, preloadedState, meta, lang, jsonLd }) {
+/**
+ * Write Emotion critical CSS to a content-hashed file under dist/ssg-css/.
+ * Identical CSS across pages shares one file.
+ * @returns {string | null} public href e.g. `/ssg-css/ab12cd.css`
+ */
+function materializeEmotionCss(distDir, cssText) {
+  const css = String(cssText || '').trim();
+  if (!css) return null;
+  const hash = crypto.createHash('sha256').update(css).digest('hex').slice(0, 12);
+  const relDir = 'ssg-css';
+  const fileName = `${hash}.css`;
+  const abs = path.join(distDir, relDir, fileName);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  if (!fs.existsSync(abs)) {
+    fs.writeFileSync(abs, `${css}\n`, 'utf8');
+  }
+  return `/${relDir}/${fileName}`;
+}
+
+function injectHtml(template, { appHtml, emotionCssHref, preloadedState, meta, lang, jsonLd }) {
   let html = template;
 
   const title = escapeHtml(meta.title);
@@ -38,13 +59,19 @@ function injectHtml(template, { appHtml, emotionCss, preloadedState, meta, lang,
   html = html.replace(/<html\b[^>]*>/i, `<html lang="${escapeHtml(htmlLang)}">`);
   html = html.replace(/<title>[^<]*<\/title>/i, `<title>${title}</title>`);
 
-  const metaTags = [
+  const metaTags = [];
+  if (emotionCssHref) {
+    metaTags.push(
+      `<link rel="stylesheet" href="${escapeHtml(emotionCssHref)}" />`,
+    );
+  }
+  metaTags.push(
     `<meta name="description" content="${description}" />`,
     `<meta property="og:title" content="${title}" />`,
     `<meta property="og:description" content="${description}" />`,
     `<meta property="og:type" content="${ogType}" />`,
     `<meta property="og:site_name" content="${siteName}" />`,
-  ];
+  );
   if (ogUrl) {
     metaTags.push(`<meta property="og:url" content="${ogUrl}" />`);
     metaTags.push(`<link rel="canonical" href="${ogUrl}" />`);
@@ -75,7 +102,7 @@ function injectHtml(template, { appHtml, emotionCss, preloadedState, meta, lang,
   );
   html = html.replace(/<meta\s+property="og:type"\s+content="website"\s*\/>/i, '');
 
-  const metaBlock = [emotionCss || '', ...metaTags].join('\n    ');
+  const metaBlock = metaTags.join('\n    ');
 
   if (/<\/head>/i.test(html)) {
     html = html.replace(/<\/head>/i, `    ${metaBlock}\n  </head>`);
@@ -150,6 +177,9 @@ export async function prerenderAll(dbStore, opts = {}) {
 
   const paths = listPrerenderPaths(dbStore);
   const written = [];
+  const ssgCssDir = path.join(distDir, 'ssg-css');
+  fs.rmSync(ssgCssDir, { recursive: true, force: true });
+  fs.rmSync(path.join(distDir, 'media'), { recursive: true, force: true });
 
   for (const urlPath of paths) {
     const { preloadedState, meta, notFound, ogImageSource, ogAssetKey, jsonLd } =
@@ -159,6 +189,9 @@ export async function prerenderAll(dbStore, opts = {}) {
     if (ogImageSource) {
       meta.image = materializeOgImage(distDir, ogAssetKey || 'image', ogImageSource);
     }
+
+    // Extract data: images from bodies into /media/*.avif before SSR so HTML stays small.
+    await materializeStateBodyImages(distDir, preloadedState);
 
     // Rebuild topic JSON-LD after image materialization so `image` is always present.
     let finalJsonLd = jsonLd;
@@ -174,9 +207,10 @@ export async function prerenderAll(dbStore, opts = {}) {
       preloadedState,
       SSG_LANG,
     );
+    const emotionCssHref = materializeEmotionCss(distDir, emotionCss);
     const page = injectHtml(template, {
       appHtml,
-      emotionCss,
+      emotionCssHref,
       preloadedState,
       meta,
       lang: SSG_LANG,

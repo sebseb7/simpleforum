@@ -17,14 +17,14 @@ import { SSG_LANG } from '@shared/ssgLang.js';
 /**
  * Render the app to HTML for a URL with optional Redux prestate.
  * @returns {Promise<{ html: string, emotionCss: string }>}
+ *   `emotionCss` is plain CSS text (not `<style>` tags) for a linked stylesheet.
  */
 export async function render(url, preloadedState, lang = SSG_LANG) {
   await i18n.changeLanguage(lang);
 
   const store = createAppStore(preloadedState);
   const cache = createCache({ key: 'css' });
-  const { extractCriticalToChunks, constructStyleTagsFromChunks } =
-    createEmotionServer(cache);
+  const { extractCriticalToChunks } = createEmotionServer(cache);
 
   const html = renderToString(
     <CacheProvider value={cache}>
@@ -42,6 +42,6 @@ export async function render(url, preloadedState, lang = SSG_LANG) {
   );
 
   const emotionChunks = extractCriticalToChunks(html);
-  const emotionCss = constructStyleTagsFromChunks(emotionChunks);
+  const emotionCss = emotionChunks.styles.map((s) => s.css).join('\n');
   return { html, emotionCss };
 }
