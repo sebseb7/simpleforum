@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { I18nextProvider } from 'react-i18next';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
+import './fonts.css';
 import store from './store/index.js';
 import theme from './theme.js';
 import App from './App.jsx';
