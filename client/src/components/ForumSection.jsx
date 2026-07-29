@@ -20,6 +20,7 @@ import ForumTopicForm from './ForumTopicForm.jsx';
 import ForumStarButton from './ForumStarButton.jsx';
 import ProtectedAction from './ProtectedAction.jsx';
 import ForumPagination from './ForumPagination.jsx';
+import DocumentMeta from './DocumentMeta.jsx';
 
 class ForumSection extends Component {
   componentDidMount() {
@@ -27,16 +28,16 @@ class ForumSection extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.params.sectionId !== this.props.params.sectionId) {
+    if (prevProps.params.sectionSlug !== this.props.params.sectionSlug) {
       this.load(0);
     }
   }
 
   load = (offset = this.props.listOffset || 0) => {
-    const sectionId = Number(this.props.params.sectionId);
-    if (sectionId) {
+    const sectionSlug = this.props.params.sectionSlug;
+    if (sectionSlug) {
       this.props.fetchSectionTopics({
-        sectionId,
+        sectionSlug,
         offset,
         limit: this.props.listLimit || TOPICS_PAGE_SIZE,
       });
@@ -63,11 +64,14 @@ class ForumSection extends Component {
       params,
       t,
     } = this.props;
-    const sectionId = Number(params.sectionId);
-    const ready = section?.id === sectionId && listStatus === 'succeeded';
+    const sectionSlug = params.sectionSlug;
+    const ready = section?.slug === sectionSlug && listStatus === 'succeeded';
 
     return (
       <Box>
+        {ready && (
+          <DocumentMeta title={section.title} description={section.description} />
+        )}
         {ready && (
           <Breadcrumbs sx={{ mb: 2 }}>
             <Link component={RouterLink} to="/" underline="hover" color="inherit">
@@ -104,7 +108,7 @@ class ForumSection extends Component {
                   {index > 0 && <Divider />}
                   <ListItemButton
                     component={RouterLink}
-                    to={`/topic/${topic.id}`}
+                    to={`/topic/${topic.slug}`}
                     sx={{ py: 1.5, alignItems: 'flex-start' }}
                   >
                     <ListItemText
@@ -159,7 +163,7 @@ class ForumSection extends Component {
             />
 
             {this.canCreateTopic() ? (
-              <ForumTopicForm sectionId={sectionId} />
+              <ForumTopicForm sectionId={section.id} />
             ) : section.adminOnlyTopics ? null : (
               <ProtectedAction
                 user={user}
@@ -174,9 +178,9 @@ class ForumSection extends Component {
 }
 
 const mapStateToProps = (state, ownProps) => {
-  const sectionId = Number(ownProps.params.sectionId);
+  const sectionSlug = ownProps.params.sectionSlug;
   const section =
-    state.topics.section?.id === sectionId ? state.topics.section : null;
+    state.topics.section?.slug === sectionSlug ? state.topics.section : null;
   return {
     section,
     topics: section ? state.topics.list : [],

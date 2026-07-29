@@ -16,6 +16,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import { fetchSections, createSection, updateSection } from '../store/sectionsSlice.js';
+import DocumentMeta from './DocumentMeta.jsx';
 
 function uiLang(i18n) {
   return (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
@@ -107,6 +108,7 @@ class AdminSections extends Component {
 
     return (
       <Box>
+        <DocumentMeta title={t('admin.title')} description={t('admin.blurb')} />
         <Typography variant="h4" gutterBottom>
           {t('admin.title')}
         </Typography>

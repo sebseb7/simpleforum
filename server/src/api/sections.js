@@ -6,6 +6,7 @@ import { validateTopicInput, validateSectionInput } from '../content/validate.js
 import { ContentValidationError, sendContentError } from '../content/errors.js';
 import { redactAnonymousHtml } from '../../../shared/redactAnonymousHtml.js';
 import { shouldRedactAnonymousMedia } from '../content/anonymousMedia.js';
+import { uniqueSlug } from '../../../shared/slugify.js';
 
 const SUPPORTED_SECTION_LANGS = new Set(['en', 'de']);
 
@@ -19,6 +20,7 @@ function mapSection(row) {
   return {
     id: row.id,
     title: row.title,
+    slug: row.slug,
     description: row.description,
     lang: row.lang || 'en',
     adminOnlyTopics: !!row.admin_only_topics,
@@ -38,7 +40,9 @@ function mapTopic(row, starredIds = null, { forAnonymous = false } = {}) {
     id: row.id,
     sectionId: row.section_id,
     sectionTitle: row.section_title || null,
+    sectionSlug: row.section_slug || null,
     title: row.title,
+    slug: row.slug,
     bodyHtml,
     authorId: row.author_id,
     authorName: row.author_name,
@@ -50,6 +54,25 @@ function mapTopic(row, starredIds = null, { forAnonymous = false } = {}) {
     starCount: row.star_count ?? 0,
     starredByMe: starredIds ? starredIds.has(row.id) : false,
   };
+}
+
+/** Resolve section by slug (preferred) or numeric id. */
+function findSection(store, key) {
+  const raw = String(key ?? '');
+  const bySlug = store.sections.findBySlug.get(raw);
+  if (bySlug) return bySlug;
+  if (/^\d+$/.test(raw)) {
+    return store.sections.findById.get(Number(raw));
+  }
+  return null;
+}
+
+function allocateSectionSlug(store, title, excludeId = 0) {
+  return uniqueSlug(title, (slug) => !!store.sections.slugExists.get(slug, excludeId));
+}
+
+function allocateTopicSlug(store, title, excludeId = 0) {
+  return uniqueSlug(title, (slug) => !!store.topics.slugExists.get(slug, excludeId));
 }
 
 export default function createSectionsRouter(store) {
@@ -82,8 +105,10 @@ export default function createSectionsRouter(store) {
       if (err instanceof ContentValidationError) return sendContentError(res, err);
       throw err;
     }
+    const slug = allocateSectionSlug(store, cleanTitle);
     const result = store.sections.insert.run(
       cleanTitle,
+      slug,
       cleanDescription,
       normalizeLang(lang),
       adminOnlyTopics ? 1 : 0,
@@ -121,8 +146,14 @@ export default function createSectionsRouter(store) {
     const sortOrder =
       req.body.sortOrder !== undefined ? Number(req.body.sortOrder) : existing.sort_order;
 
+    const slug =
+      cleanTitle === existing.title
+        ? existing.slug
+        : allocateSectionSlug(store, cleanTitle, id);
+
     store.sections.update.run(
       cleanTitle,
+      slug,
       cleanDescription,
       lang,
       adminOnlyTopics ? 1 : 0,
@@ -134,12 +165,12 @@ export default function createSectionsRouter(store) {
     return res.json({ section });
   });
 
-  router.get('/sections/:id/topics', optionalAuth, (req, res) => {
-    const sectionId = Number(req.params.id);
-    const section = store.sections.findById.get(sectionId);
+  router.get('/sections/:idOrSlug/topics', optionalAuth, (req, res) => {
+    const section = findSection(store, req.params.idOrSlug);
     if (!section) {
       return res.status(404).json({ error: 'Section not found' });
     }
+    const sectionId = section.id;
     const { offset, limit } = parseWindow(req.query, { defaultLimit: 20 });
     let starredIds = null;
     if (req.user) {
@@ -158,12 +189,12 @@ export default function createSectionsRouter(store) {
     });
   });
 
-  router.post('/sections/:id/topics', requireAuth, (req, res) => {
-    const sectionId = Number(req.params.id);
-    const section = store.sections.findById.get(sectionId);
+  router.post('/sections/:idOrSlug/topics', requireAuth, (req, res) => {
+    const section = findSection(store, req.params.idOrSlug);
     if (!section) {
       return res.status(404).json({ error: 'Section not found' });
     }
+    const sectionId = section.id;
     if (section.admin_only_topics && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Only admins can create topics in this section' });
     }
@@ -179,9 +210,11 @@ export default function createSectionsRouter(store) {
       if (err instanceof ContentValidationError) return sendContentError(res, err);
       throw err;
     }
+    const slug = allocateTopicSlug(store, title);
     const result = store.topics.insert.run(
       sectionId,
       title,
+      slug,
       bodyHtml,
       req.user.id,
     );
@@ -196,4 +229,4 @@ export default function createSectionsRouter(store) {
   return router;
 }
 
-export { mapTopic, mapSection };
+export { mapTopic, mapSection, findSection, allocateTopicSlug, allocateSectionSlug };

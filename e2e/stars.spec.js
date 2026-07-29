@@ -35,7 +35,7 @@ test.describe('Stars', () => {
       targetId: post.id,
     });
 
-    await page.goto(`/topic/${topic.id}`);
+    await page.goto(`/topic/${topic.slug}`);
     await expect(page.getByRole('heading', { name: 'Starworthy Topic' })).toBeVisible();
 
     await page.goto('/starred');
@@ -66,7 +66,7 @@ test.describe('Stars', () => {
       bodyHtml: '<p>x</p>',
     });
 
-    await page.goto(`/topic/${topic.id}`);
+    await page.goto(`/topic/${topic.slug}`);
     await expect(page.getByRole('button', { name: 'Sign in to star' }).first()).toBeDisabled();
 
     let rejected = false;

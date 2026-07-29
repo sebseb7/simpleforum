@@ -98,16 +98,17 @@ function seedInitialContent(db) {
     }
 
     const insertSection = db.prepare(`
-      INSERT INTO sections (title, description, lang, admin_only_topics, sort_order, created_by)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO sections (title, slug, description, lang, admin_only_topics, sort_order, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     const insertTopic = db.prepare(`
-      INSERT INTO topics (section_id, title, body_html, author_id)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO topics (section_id, title, slug, body_html, author_id)
+      VALUES (?, ?, ?, ?, ?)
     `);
 
     const enDebate = insertSection.run(
       'Generate Debate English',
+      'generate-debate-english',
       'Open topics for everyone',
       'en',
       0,
@@ -116,6 +117,7 @@ function seedInitialContent(db) {
     );
     insertSection.run(
       'Announcements English',
+      'announcements-english',
       'Admin opens topics',
       'en',
       1,
@@ -124,6 +126,7 @@ function seedInitialContent(db) {
     );
     const deDebate = insertSection.run(
       'Allgemein - Deutsch',
+      'allgemein-deutsch',
       'Offene Themen für alle',
       'de',
       0,
@@ -132,6 +135,7 @@ function seedInitialContent(db) {
     );
     insertSection.run(
       'Ankündigungen - Deutsch',
+      'ankuendigungen-deutsch',
       'Admins eröffnen Themen',
       'de',
       1,
@@ -142,12 +146,14 @@ function seedInitialContent(db) {
     insertTopic.run(
       enDebate.lastInsertRowid,
       'Welcome',
+      'welcome',
       '<p>Debate starts here.</p>',
       author.id,
     );
     insertTopic.run(
       deDebate.lastInsertRowid,
       'Willkommen',
+      'willkommen',
       '<p>Die Debatte beginnt hier.</p>',
       author.id,
     );

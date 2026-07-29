@@ -6,16 +6,18 @@ export const POSTS_PAGE_SIZE = 50;
 
 export const fetchSectionTopics = createAsyncThunk(
   'topics/fetchBySection',
-  async ({ sectionId, offset = 0, limit = TOPICS_PAGE_SIZE }) => {
-    const data = await api.getSectionTopics(sectionId, { offset, limit });
+  async ({ sectionSlug, sectionId, offset = 0, limit = TOPICS_PAGE_SIZE }) => {
+    const key = sectionSlug || sectionId;
+    const data = await api.getSectionTopics(key, { offset, limit });
     return data;
   },
 );
 
 export const fetchTopic = createAsyncThunk(
   'topics/fetchOne',
-  async ({ topicId, offset = 0, limit = POSTS_PAGE_SIZE }) => {
-    const data = await api.getTopic(topicId, { offset, limit });
+  async ({ topicSlug, topicId, offset = 0, limit = POSTS_PAGE_SIZE }) => {
+    const key = topicSlug || topicId;
+    const data = await api.getTopic(key, { offset, limit });
     return data;
   },
 );
@@ -79,12 +81,12 @@ const topicsSlice = createSlice({
       if (idx >= 0) state.list[idx] = { ...state.list[idx], ...topic };
     },
     applyTopicDeleted(state, action) {
-      const { topicId, sectionId } = action.payload;
+      const { topicId, sectionId, sectionSlug } = action.payload;
       state.list = state.list.filter((t) => t.id !== topicId);
       if (state.listTotal > 0) state.listTotal -= 1;
       if (state.current?.id === topicId) {
         state.current = null;
-        state.deletedNavigate = { sectionId };
+        state.deletedNavigate = { sectionId, sectionSlug };
       }
     },
     clearDeletedNavigate(state) {
@@ -108,8 +110,11 @@ const topicsSlice = createSlice({
       .addCase(fetchSectionTopics.pending, (state, action) => {
         state.listStatus = 'loading';
         state.error = null;
-        const requestedId = Number(action.meta.arg.sectionId);
-        if (state.section?.id !== requestedId) {
+        const { sectionSlug, sectionId } = action.meta.arg;
+        const same =
+          (sectionSlug && state.section?.slug === sectionSlug) ||
+          (sectionId && state.section?.id === Number(sectionId));
+        if (!same) {
           state.section = null;
           state.list = [];
           state.listTotal = 0;
@@ -131,8 +136,11 @@ const topicsSlice = createSlice({
       .addCase(fetchTopic.pending, (state, action) => {
         state.currentStatus = 'loading';
         state.error = null;
-        const requestedId = Number(action.meta.arg.topicId);
-        if (state.current?.id !== requestedId) {
+        const { topicSlug, topicId } = action.meta.arg;
+        const same =
+          (topicSlug && state.current?.slug === topicSlug) ||
+          (topicId && state.current?.id === Number(topicId));
+        if (!same) {
           state.current = null;
         }
       })
@@ -162,7 +170,10 @@ const topicsSlice = createSlice({
         if (state.listTotal > 0) state.listTotal -= 1;
         if (state.current?.id === action.payload.topicId) {
           state.current = null;
-          state.deletedNavigate = { sectionId: action.payload.sectionId };
+          state.deletedNavigate = {
+            sectionId: action.payload.sectionId,
+            sectionSlug: action.payload.sectionSlug,
+          };
         }
       });
   },

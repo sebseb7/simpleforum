@@ -12,6 +12,7 @@ import Alert from '@mui/material/Alert';
 import { fetchMyStars } from '../store/starsSlice.js';
 import { formatForumDate } from '../i18n/formatDate.js';
 import ProtectedAction from './ProtectedAction.jsx';
+import DocumentMeta from './DocumentMeta.jsx';
 
 class StarredPage extends Component {
   componentDidMount() {
@@ -32,6 +33,7 @@ class StarredPage extends Component {
     if (!user) {
       return (
         <Box>
+          <DocumentMeta title={t('starred.title')} />
           <Typography variant="h4" gutterBottom>
             {t('starred.title')}
           </Typography>
@@ -42,6 +44,7 @@ class StarredPage extends Component {
 
     return (
       <Box>
+        <DocumentMeta title={t('starred.title')} />
         <Typography variant="h4" gutterBottom>
           {t('starred.title')}
         </Typography>
@@ -54,7 +57,7 @@ class StarredPage extends Component {
           {topics.map((topic, index) => (
             <React.Fragment key={topic.id}>
               {index > 0 && <Divider />}
-              <ListItemButton component={RouterLink} to={`/topic/${topic.id}`}>
+              <ListItemButton component={RouterLink} to={`/topic/${topic.slug}`}>
                 <ListItemText
                   primary={topic.title}
                   secondary={t('starred.topicMeta', {
@@ -79,7 +82,7 @@ class StarredPage extends Component {
           {posts.map((post, index) => (
             <React.Fragment key={post.id}>
               {index > 0 && <Divider />}
-              <ListItemButton component={RouterLink} to={`/topic/${post.topicId}`}>
+              <ListItemButton component={RouterLink} to={`/topic/${post.topicSlug}`}>
                 <ListItemText
                   primary={t('starred.postBy', { name: post.authorName })}
                   secondary={t('starred.postMeta', {

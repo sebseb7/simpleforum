@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { openDatabase } from '../src/db.js';
+import { uniqueSlug } from '../../shared/slugify.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
@@ -289,6 +290,7 @@ function seedSectionTopics({
   topicCount,
   announceCount,
   now,
+  usedSlugs,
 }) {
   let totalPosts = 0;
   let totalTopics = 0;
@@ -298,6 +300,8 @@ function seedSectionTopics({
     const created = daysAgo(now, YEAR_DAYS - 1 - dayOffset, 8 + (i % 10), (i * 3) % 60);
     const authorId = userIds[i % userIds.length];
     const title = `${pick(titles, i)} (#${i + 1})`;
+    const slug = uniqueSlug(title, (s) => usedSlugs.has(s));
+    usedSlugs.add(slug);
     const replies = replyCountForIndex(i);
     const closed = i % 23 === 0 ? 1 : 0;
     const span = Math.max(1, Math.min(45, Math.floor(replies / 4) + 1));
@@ -307,6 +311,7 @@ function seedSectionTopics({
     const topicResult = insertTopic.run(
       debateId,
       title,
+      slug,
       bodyHtml(lang, i, i % 4 === 0),
       authorId,
       closed,
@@ -353,9 +358,13 @@ function seedSectionTopics({
   for (let i = 0; i < announceCount; i++) {
     const dayOffset = Math.floor((i / Math.max(announceCount - 1, 1)) * (YEAR_DAYS - 1));
     const created = daysAgo(now, YEAR_DAYS - 1 - dayOffset, 10, i);
+    const title = pick(announceTitles, i);
+    const slug = uniqueSlug(title, (s) => usedSlugs.has(s));
+    usedSlugs.add(slug);
     insertTopic.run(
       announceId,
-      pick(announceTitles, i),
+      title,
+      slug,
       bodyHtml(lang, 900 + i, true),
       adminId,
       0,
@@ -378,9 +387,12 @@ function seedStress(store) {
     VALUES (?, ?, ?, NULL, ?, 0)
   `);
   const insertTopic = db.prepare(`
-    INSERT INTO topics (section_id, title, body_html, author_id, is_closed, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO topics (section_id, title, slug, body_html, author_id, is_closed, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
+  const usedSlugs = new Set(
+    db.prepare('SELECT slug FROM topics').all().map((r) => r.slug).filter(Boolean),
+  );
   const insertPost = db.prepare(`
     INSERT INTO posts (topic_id, body_html, author_id, created_at)
     VALUES (?, ?, ?, ?)
@@ -414,6 +426,7 @@ function seedStress(store) {
       userIds,
       adminId,
       now,
+      usedSlugs,
     };
 
     const en = seedSectionTopics({

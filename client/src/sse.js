@@ -103,6 +103,7 @@ function handleEvent(store, msg) {
         applyTopicDeleted({
           topicId: payload.topicId,
           sectionId: payload.sectionId,
+          sectionSlug: payload.sectionSlug,
         }),
       );
       if (state.topics.section?.id === payload.sectionId) {

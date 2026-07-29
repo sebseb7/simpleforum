@@ -12,6 +12,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import { fetchSections } from '../store/sectionsSlice.js';
+import DocumentMeta from './DocumentMeta.jsx';
 
 function uiLang(i18n) {
   return (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
@@ -37,6 +38,7 @@ class ForumMain extends Component {
 
     return (
       <Box>
+        <DocumentMeta title={t('home.welcome')} description={t('home.blurb')} />
         <Typography variant="h3" gutterBottom>
           {t('home.welcome')}
         </Typography>
@@ -52,7 +54,7 @@ class ForumMain extends Component {
               {index > 0 && <Divider />}
               <ListItemButton
                 component={RouterLink}
-                to={`/section/${section.id}`}
+                to={`/section/${section.slug}`}
                 sx={{ py: 2, alignItems: 'flex-start' }}
               >
                 <ListItemText

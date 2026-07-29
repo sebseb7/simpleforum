@@ -38,15 +38,18 @@ test.describe('Public browse (anonymous)', () => {
       bodyHtml: '<p>First reply</p>',
     });
 
-    await page.goto(`/section/${section.id}`);
+    await page.goto(`/section/${section.slug}`);
     await expect(page.getByRole('heading', { name: 'Browse Section' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Readable Topic/ })).toBeVisible();
+    await expect(page).toHaveTitle(/Browse Section/);
 
-    await page.goto(`/topic/${topic.id}`);
+    await page.goto(`/topic/${topic.slug}`);
     await expect(page.getByRole('heading', { name: 'Readable Topic' })).toBeVisible();
     await expect(page.getByText('Hello world')).toBeVisible();
     await expect(page.getByText('First reply')).toBeVisible();
     await expect(page.getByText('Sign in to participate.')).toBeVisible();
+    await expect(page).toHaveTitle(/Readable Topic/);
+    await expect(page).toHaveURL(new RegExp(`/topic/${topic.slug}`));
   });
 
   test('starred page is reachable and prompts login', async ({ page }) => {

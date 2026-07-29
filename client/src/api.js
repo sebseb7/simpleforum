@@ -71,27 +71,27 @@ const api = {
     return request(`/sections/${id}`, { method: 'PATCH', body: payload });
   },
 
-  getSectionTopics(sectionId, { offset = 0, limit = 20 } = {}) {
+  getSectionTopics(sectionIdOrSlug, { offset = 0, limit = 20 } = {}) {
     const q = new URLSearchParams({
       offset: String(offset),
       limit: String(limit),
     });
-    return request(`/sections/${sectionId}/topics?${q}`);
+    return request(`/sections/${encodeURIComponent(sectionIdOrSlug)}/topics?${q}`);
   },
 
-  createTopic(sectionId, payload) {
-    return request(`/sections/${sectionId}/topics`, {
+  createTopic(sectionIdOrSlug, payload) {
+    return request(`/sections/${encodeURIComponent(sectionIdOrSlug)}/topics`, {
       method: 'POST',
       body: payload,
     });
   },
 
-  getTopic(topicId, { offset = 0, limit = 50 } = {}) {
+  getTopic(topicIdOrSlug, { offset = 0, limit = 50 } = {}) {
     const q = new URLSearchParams({
       offset: String(offset),
       limit: String(limit),
     });
-    return request(`/topics/${topicId}?${q}`);
+    return request(`/topics/${encodeURIComponent(topicIdOrSlug)}?${q}`);
   },
 
   closeTopic(topicId) {

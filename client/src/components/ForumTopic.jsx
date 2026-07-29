@@ -43,6 +43,14 @@ import {
   isOverTitleLimit,
 } from '../content/contentErrors.js';
 import { imageRejectMessage } from '../content/quillImageHandler.js';
+import DocumentMeta from './DocumentMeta.jsx';
+
+function plainTextFromHtml(html) {
+  return String(html || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 class ForumTopic extends Component {
   state = {
@@ -60,7 +68,7 @@ class ForumTopic extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.params.topicId !== this.props.params.topicId) {
+    if (prevProps.params.topicSlug !== this.props.params.topicSlug) {
       this.setState({ editing: false, editError: null });
       this.load(0);
     }
@@ -69,17 +77,17 @@ class ForumTopic extends Component {
       this.load(this.props.postsOffset || 0);
     }
     if (this.props.deletedNavigate) {
-      const { sectionId } = this.props.deletedNavigate;
+      const { sectionSlug, sectionId } = this.props.deletedNavigate;
       this.props.clearDeletedNavigate();
-      this.props.navigate(`/section/${sectionId}`);
+      this.props.navigate(`/section/${sectionSlug || sectionId}`);
     }
   }
 
   load = (offset = this.props.postsOffset || 0) => {
-    const topicId = Number(this.props.params.topicId);
-    if (topicId) {
+    const topicSlug = this.props.params.topicSlug;
+    if (topicSlug) {
       this.props.fetchTopic({
-        topicId,
+        topicSlug,
         offset,
         limit: this.props.postsLimit || POSTS_PAGE_SIZE,
       });
@@ -88,13 +96,13 @@ class ForumTopic extends Component {
 
   handleClose = () => {
     if (window.confirm(this.props.t('topic.closeConfirm'))) {
-      this.props.closeTopic(Number(this.props.params.topicId));
+      this.props.closeTopic(this.props.topic.id);
     }
   };
 
   handleDelete = () => {
     if (window.confirm(this.props.t('topic.deleteConfirm'))) {
-      this.props.deleteTopic(Number(this.props.params.topicId));
+      this.props.deleteTopic(this.props.topic.id);
     }
   };
 
@@ -142,7 +150,7 @@ class ForumTopic extends Component {
     }
     this.setState({ saving: true, editError: null, imageError: null });
     try {
-      const { contentFilter } = await this.props
+      const { contentFilter, topic } = await this.props
         .updateTopic({
           topicId: this.props.topic.id,
           title: editTitle.trim(),
@@ -154,6 +162,9 @@ class ForumTopic extends Component {
         saving: false,
         contentFilter: contentFilter?.changed ? contentFilter : null,
       });
+      if (topic?.slug && topic.slug !== this.props.params.topicSlug) {
+        this.props.navigate(`/topic/${topic.slug}`, { replace: true });
+      }
     } catch (err) {
       this.setState({
         editError: contentErrorMessage(err, t) || t('topic.updateFailed'),
@@ -177,13 +188,19 @@ class ForumTopic extends Component {
     } = this.props;
     const { editing, editTitle, editBodyHtml, editError, saving, contentFilter, imageError } =
       this.state;
-    const topicId = Number(params.topicId);
-    const ready = topic?.id === topicId;
+    const topicSlug = params.topicSlug;
+    const ready = topic?.slug === topicSlug;
     const isAuthor = user && ready && user.id === topic.authorId;
     const canClose = isAuthor || user?.isAdmin;
 
     return (
       <Box>
+        {ready && (
+          <DocumentMeta
+            title={topic.title}
+            description={plainTextFromHtml(topic.bodyHtml) || topic.sectionTitle}
+          />
+        )}
         {ready && (
           <Breadcrumbs sx={{ mb: 2 }}>
             <Link component={RouterLink} to="/" underline="hover" color="inherit">
@@ -191,7 +208,7 @@ class ForumTopic extends Component {
             </Link>
             <Link
               component={RouterLink}
-              to={`/section/${topic.sectionId}`}
+              to={`/section/${topic.sectionSlug}`}
               underline="hover"
               color="inherit"
             >
@@ -220,7 +237,7 @@ class ForumTopic extends Component {
                     label={t('topic.title')}
                     value={editTitle}
                     onChange={(e) => this.setState({ editTitle: e.target.value })}
-                    inputProps={{ maxLength: CONTENT_LIMITS.titleMax }}
+                    slotProps={{ htmlInput: { maxLength: CONTENT_LIMITS.titleMax } }}
                     helperText={`${editTitle.trim().length}/${CONTENT_LIMITS.titleMax}`}
                     sx={{ mb: 1 }}
                   />
@@ -352,24 +369,26 @@ class ForumTopic extends Component {
 }
 
 const mapStateToProps = (state, ownProps) => {
-  const topicId = Number(ownProps.params.topicId);
+  const topicSlug = ownProps.params.topicSlug;
   const topic =
-    state.topics.current?.id === topicId ? state.topics.current : null;
+    state.topics.current?.slug === topicSlug ? state.topics.current : null;
   const sectionTitle =
     topic?.sectionTitle ||
     state.sections.items.find((s) => s.id === topic?.sectionId)?.title ||
     null;
+  const topicId = topic?.id;
+  const postsWindow =
+    topicId != null && state.posts.window?.topicId === topicId
+      ? state.posts.window
+      : null;
   return {
     topic: topic
       ? { ...topic, sectionTitle: sectionTitle || topic.sectionTitle }
       : null,
-    posts: topic ? state.posts.byTopicId[topicId] || [] : [],
-    postsTotal: state.posts.window?.topicId === topicId ? state.posts.window.total : 0,
-    postsOffset: state.posts.window?.topicId === topicId ? state.posts.window.offset : 0,
-    postsLimit:
-      state.posts.window?.topicId === topicId
-        ? state.posts.window.limit
-        : 50,
+    posts: topicId != null ? state.posts.byTopicId[topicId] || [] : [],
+    postsTotal: postsWindow?.total ?? 0,
+    postsOffset: postsWindow?.offset ?? 0,
+    postsLimit: postsWindow?.limit ?? 50,
     error: state.topics.error,
     user: state.auth.user,
     deletedNavigate: state.topics.deletedNavigate,

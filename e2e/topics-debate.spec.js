@@ -20,7 +20,7 @@ test.describe('Topics and debate', () => {
       isAdmin: false,
     });
 
-    await page.goto(`/section/${section.id}`);
+    await page.goto(`/section/${section.slug}`);
     await expect(page.getByRole('heading', { name: 'Open Forum' })).toBeVisible();
 
     await page.getByLabel('Title').fill('My Debate');
@@ -32,6 +32,7 @@ test.describe('Topics and debate', () => {
 
     await expect(page.getByRole('heading', { name: 'My Debate' })).toBeVisible();
     await expect(page.getByText('Opening statement')).toBeVisible();
+    await expect(page).toHaveURL(/\/topic\/my-debate/);
 
     await fillQuill(page, 'A thoughtful reply');
     await page.getByRole('button', { name: 'Post reply' }).click();
@@ -44,7 +45,7 @@ test.describe('Topics and debate', () => {
 
     page.once('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Delete' }).first().click();
-    await expect(page).toHaveURL(new RegExp(`/section/${section.id}`));
+    await expect(page).toHaveURL(new RegExp(`/section/${section.slug}`));
     await expect(page.getByRole('link', { name: /My Debate/ })).toHaveCount(0);
 
     expect(user.email).toBe('poster@e2e.test');
@@ -72,12 +73,12 @@ test.describe('Topics and debate', () => {
       isAdmin: false,
     });
 
-    await page.goto(`/section/${section.id}`);
+    await page.goto(`/section/${section.slug}`);
     await expect(page.getByRole('heading', { name: 'Announcements' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create topic' })).toHaveCount(0);
     await expect(page.getByText('Sign in to start a topic.')).toHaveCount(0);
 
-    await page.goto(`/topic/${topic.id}`);
+    await page.goto(`/topic/${topic.slug}`);
     await fillQuill(page, 'I agree with the rules');
     await page.getByRole('button', { name: 'Post reply' }).click();
     await expect(page.getByText('I agree with the rules')).toBeVisible();

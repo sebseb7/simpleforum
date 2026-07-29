@@ -5,12 +5,14 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import DocumentMeta from './DocumentMeta.jsx';
 
 class PrivacyPolicy extends Component {
   render() {
     const { t } = this.props;
     return (
       <Box>
+        <DocumentMeta title={t('privacy.title')} description={t('privacy.intro')} />
         <Breadcrumbs sx={{ mb: 2 }}>
           <Link component={RouterLink} to="/" underline="hover" color="inherit">
             {t('nav.forums')}

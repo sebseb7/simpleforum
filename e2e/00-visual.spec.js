@@ -45,7 +45,7 @@ test.describe('Visual baselines', () => {
     const section = sections.find((s) => s.title === 'Visual Hall');
     expect(section).toBeTruthy();
 
-    await page.goto(`/section/${section.id}`);
+    await page.goto(`/section/${section.slug}`);
     await expect(page.getByRole('heading', { name: 'Visual Hall' })).toBeVisible();
     await expect(page).toHaveScreenshot('section-anonymous.png', { fullPage: true });
   });
@@ -53,10 +53,10 @@ test.describe('Visual baselines', () => {
   test('anonymous topic', async ({ page }) => {
     const { sections } = await apiRequest(null, 'GET', '/sections');
     const section = sections.find((s) => s.title === 'Visual Hall');
-    const { topics } = await apiRequest(null, 'GET', `/sections/${section.id}/topics`);
+    const { topics } = await apiRequest(null, 'GET', `/sections/${section.slug}/topics`);
     const topic = topics.find((t) => t.title === 'Baseline Topic');
 
-    await page.goto(`/topic/${topic.id}`);
+    await page.goto(`/topic/${topic.slug}`);
     await expect(page.getByRole('heading', { name: 'Baseline Topic' })).toBeVisible();
     await expect(page).toHaveScreenshot('topic-anonymous.png', { fullPage: true });
   });

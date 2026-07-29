@@ -58,8 +58,8 @@ class App extends Component {
             <Container maxWidth="md" sx={{ py: 3, flex: 1 }}>
               <Routes>
                 <Route path="/" element={<ForumMain />} />
-                <Route path="/section/:sectionId" element={<ForumSection />} />
-                <Route path="/topic/:topicId" element={<ForumTopic />} />
+                <Route path="/section/:sectionSlug" element={<ForumSection />} />
+                <Route path="/topic/:topicSlug" element={<ForumTopic />} />
                 <Route path="/admin/sections" element={<AdminSections />} />
                 <Route path="/starred" element={<StarredPage />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />

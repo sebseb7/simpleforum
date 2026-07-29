@@ -109,7 +109,7 @@ class ForumTopicForm extends Component {
           label={t('topicForm.title')}
           value={title}
           onChange={(e) => this.setState({ title: e.target.value })}
-          inputProps={{ maxLength: CONTENT_LIMITS.titleMax }}
+          slotProps={{ htmlInput: { maxLength: CONTENT_LIMITS.titleMax } }}
           helperText={`${title.trim().length}/${CONTENT_LIMITS.titleMax}`}
           sx={{ mb: 2 }}
         />

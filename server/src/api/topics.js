@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth } from '../auth.js';
 import { broadcast } from '../sse.js';
-import { mapTopic } from './sections.js';
+import { mapTopic, allocateTopicSlug } from './sections.js';
 import { parseWindow, windowMeta } from '../pagination.js';
 import { validateTopicInput } from '../content/validate.js';
 import { ContentValidationError, sendContentError } from '../content/errors.js';
@@ -26,15 +26,26 @@ function mapPost(row, starredIds = null, { forAnonymous = false } = {}) {
   };
 }
 
+/** Resolve topic by slug (preferred) or numeric id. */
+function findTopic(store, key) {
+  const raw = String(key ?? '');
+  const bySlug = store.topics.findBySlug.get(raw);
+  if (bySlug) return bySlug;
+  if (/^\d+$/.test(raw)) {
+    return store.topics.findById.get(Number(raw));
+  }
+  return null;
+}
+
 export default function createTopicsRouter(store) {
   const router = Router();
 
-  router.get('/topics/:id', optionalAuth, (req, res) => {
-    const id = Number(req.params.id);
-    const topicRow = store.topics.findById.get(id);
+  router.get('/topics/:idOrSlug', optionalAuth, (req, res) => {
+    const topicRow = findTopic(store, req.params.idOrSlug);
     if (!topicRow) {
       return res.status(404).json({ error: 'Topic not found' });
     }
+    const id = topicRow.id;
 
     const { offset, limit } = parseWindow(req.query, { defaultLimit: 50 });
     const forAnonymous = !req.user;
@@ -105,7 +116,11 @@ export default function createTopicsRouter(store) {
       if (err instanceof ContentValidationError) return sendContentError(res, err);
       throw err;
     }
-    store.topics.update.run(title, bodyHtml, id);
+    const slug =
+      title === topicRow.title
+        ? topicRow.slug
+        : allocateTopicSlug(store, title, id);
+    store.topics.update.run(title, slug, bodyHtml, id);
     const topic = mapTopic(store.topics.findById.get(id));
     broadcast({
       type: 'topic.updated',
@@ -124,6 +139,7 @@ export default function createTopicsRouter(store) {
       return res.status(403).json({ error: 'Only the topic creator can delete it' });
     }
     const sectionId = topicRow.section_id;
+    const sectionSlug = topicRow.section_slug;
     const deleteAll = store.db.transaction(() => {
       store.topics.deleteStarsForTopic.run(id, id);
       store.topics.delete.run(id);
@@ -131,9 +147,9 @@ export default function createTopicsRouter(store) {
     deleteAll();
     broadcast({
       type: 'topic.deleted',
-      payload: { topicId: id, sectionId },
+      payload: { topicId: id, sectionId, sectionSlug },
     });
-    return res.json({ ok: true, topicId: id, sectionId });
+    return res.json({ ok: true, topicId: id, sectionId, sectionSlug });
   });
 
   return router;
