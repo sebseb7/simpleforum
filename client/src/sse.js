@@ -15,32 +15,141 @@ import { createLogger } from './logger.js';
 
 const log = createLogger('sse');
 
+/** If no event (incl. heartbeat) arrives, treat the HTTP/2 stream as dead. */
+const STALE_MS = 45000;
+const RECONNECT_MIN_MS = 1000;
+const RECONNECT_MAX_MS = 30000;
+
 let source = null;
+let storeRef = null;
+let lastEventAt = 0;
+let watchdogTimer = null;
+let reconnectTimer = null;
+let reconnectAttempt = 0;
+let intentionalClose = false;
 
-export function startSse(store) {
-  if (source) return;
+function clearTimers() {
+  if (watchdogTimer) {
+    clearInterval(watchdogTimer);
+    watchdogTimer = null;
+  }
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
 
+function scheduleReconnect() {
+  if (intentionalClose || reconnectTimer) return;
+  const delay = Math.min(
+    RECONNECT_MAX_MS,
+    RECONNECT_MIN_MS * 2 ** Math.min(reconnectAttempt, 5),
+  );
+  reconnectAttempt += 1;
+  log.warn(`reconnect in ${delay}ms (attempt ${reconnectAttempt})`);
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    openSource();
+  }, delay);
+}
+
+function openSource() {
+  if (intentionalClose || !storeRef) return;
+  if (source) {
+    try {
+      source.close();
+    } catch {
+      // ignore
+    }
+    source = null;
+  }
+
+  lastEventAt = Date.now();
   source = new EventSource('/api/events');
 
   source.onmessage = (event) => {
+    lastEventAt = Date.now();
+    reconnectAttempt = 0;
     try {
       const msg = JSON.parse(event.data);
-      handleEvent(store, msg);
+      if (msg?.type === 'heartbeat' || msg?.type === 'connected') return;
+      handleEvent(storeRef, msg);
     } catch (err) {
       log.error('SSE parse error', err);
     }
   };
 
   source.onerror = () => {
-    // Browser auto-reconnects; no-op
+    // EventSource auto-retries, but after ERR_HTTP2_PING_FAILED it can stick.
+    // Force a clean reopen if the socket looks dead.
+    if (!source) return;
+    if (source.readyState === EventSource.CLOSED) {
+      source = null;
+      scheduleReconnect();
+    }
   };
+
+  if (!watchdogTimer) {
+    watchdogTimer = setInterval(() => {
+      if (intentionalClose) return;
+      if (Date.now() - lastEventAt < STALE_MS) return;
+      log.warn('stale stream — forcing reconnect');
+      if (source) {
+        try {
+          source.close();
+        } catch {
+          // ignore
+        }
+        source = null;
+      }
+      scheduleReconnect();
+    }, 10000);
+  }
+}
+
+export function startSse(store) {
+  storeRef = store;
+  intentionalClose = false;
+  if (source || reconnectTimer) return;
+  openSource();
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibility);
+  }
+}
+
+function onVisibility() {
+  if (typeof document === 'undefined' || document.visibilityState !== 'visible') {
+    return;
+  }
+  if (intentionalClose || !storeRef) return;
+  // Tab woke up: if stream went stale in background, reconnect now.
+  if (!source || Date.now() - lastEventAt > STALE_MS) {
+    log.info('tab visible — refreshing SSE');
+    if (source) {
+      try {
+        source.close();
+      } catch {
+        // ignore
+      }
+      source = null;
+    }
+    reconnectAttempt = 0;
+    openSource();
+  }
 }
 
 export function stopSse() {
+  intentionalClose = true;
+  clearTimers();
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', onVisibility);
+  }
   if (source) {
     source.close();
     source = null;
   }
+  storeRef = null;
 }
 
 function refetchSectionTopics(store, sectionId) {

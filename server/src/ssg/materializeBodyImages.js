@@ -32,13 +32,14 @@ export function parseDataImageUrl(dataUrl) {
 
 /**
  * Encode buffer as AVIF; fall back to original bytes + ext on failure.
+ * effort 1 ≈ much faster than default 4; quality still fine for forum images.
  * @returns {Promise<{ bytes: Buffer, ext: string }>}
  */
 async function encodeAvifOrFallback(buffer, mime) {
   try {
     const bytes = await sharp(buffer, { animated: false })
       .rotate()
-      .avif({ quality: 55, effort: 4 })
+      .avif({ quality: 50, effort: 1 })
       .toBuffer();
     if (bytes?.length) return { bytes, ext: 'avif' };
   } catch {
@@ -57,6 +58,7 @@ async function encodeAvifOrFallback(buffer, mime) {
 
 /**
  * Write image under dist/media/<hash>.avif (content-addressed).
+ * Skips re-encoding when the hashed file already exists from a prior SSG pass.
  * @returns {Promise<string | null>} public path e.g. `/media/ab12.avif`
  */
 export async function materializeDataImage(distDir, dataUrl) {
@@ -68,13 +70,20 @@ export async function materializeDataImage(distDir, dataUrl) {
     .update(parsed.buffer)
     .digest('hex')
     .slice(0, 16);
+  const mediaDir = path.join(distDir, 'media');
+  fs.mkdirSync(mediaDir, { recursive: true });
+
+  const cachedExts = ['avif', 'jpg', 'webp', 'png', 'gif'];
+  for (const ext of cachedExts) {
+    const name = `${hash}.${ext}`;
+    if (fs.existsSync(path.join(mediaDir, name))) {
+      return `/media/${name}`;
+    }
+  }
+
   const { bytes, ext } = await encodeAvifOrFallback(parsed.buffer, parsed.mime);
   const fileName = `${hash}.${ext}`;
-  const abs = path.join(distDir, 'media', fileName);
-  fs.mkdirSync(path.dirname(abs), { recursive: true });
-  if (!fs.existsSync(abs)) {
-    fs.writeFileSync(abs, bytes);
-  }
+  fs.writeFileSync(path.join(mediaDir, fileName), bytes);
   return `/media/${fileName}`;
 }
 
@@ -114,6 +123,9 @@ export async function materializeStateBodyImages(distDir, preloadedState) {
   if (!preloadedState) return 0;
 
   let count = 0;
+
+  // Only topic detail + posts — section topic lists omit bodyHtml in SSG.
+
   const topic = preloadedState.topics?.current;
   if (topic?.bodyHtml) {
     const before = topic.bodyHtml;

@@ -146,15 +146,12 @@ export function loadPageData(store, urlPath) {
       TOPICS_PAGE_SIZE,
       0,
     );
-    const topics = topicRows.map((row) =>
-      mapTopic(row, null, { forAnonymous: true }),
-    );
-
-    let imageSource = null;
-    for (const row of topicRows) {
-      imageSource = buildTopicOgImageSource(row, []);
-      if (imageSource) break;
-    }
+    // Section list UI only needs titles/meta — omit bodies so SSG HTML stays
+    // small and we don't AVIF-encode images that are never shown here.
+    const topics = topicRows.map((row) => {
+      const topic = mapTopic(row, null, { forAnonymous: true });
+      return { ...topic, bodyHtml: '' };
+    });
 
     const meta = baseMeta({
       title: docTitle(section.title),
@@ -163,7 +160,6 @@ export function loadPageData(store, urlPath) {
         .trim()
         .slice(0, 300),
       url: canonicalUrl(`/section/${section.slug}`),
-      image: imageSource?.kind === 'https' ? imageSource.url : '',
     });
 
     return {
@@ -182,8 +178,6 @@ export function loadPageData(store, urlPath) {
         },
       }),
       meta,
-      ogImageSource: imageSource,
-      ogAssetKey: `section-${section.slug}`,
       jsonLd: jsonLdSection({ meta, section, topics }),
     };
   }

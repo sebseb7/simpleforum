@@ -38,7 +38,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       outDir: isSsrBuild
         ? path.resolve(__dirname, 'dist-ssr')
         : path.resolve(__dirname, 'dist'),
-      emptyOutDir: true,
+      // Never wipe client dist/: keep media/, og/, SSG HTML, and old hashed
+      // assets so open tabs can still lazy-load chunks from a prior deploy.
+      // SSR bundle dir (dist-ssr) is still emptied each SSR build.
+      emptyOutDir: isSsrBuild,
       rolldownOptions: isSsrBuild
         ? undefined
         : {

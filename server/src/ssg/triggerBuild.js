@@ -24,9 +24,15 @@ function runBuild() {
   running = true;
   dirty = false;
   log.info('starting npm run build…');
+
+  // Vite/picocolors/chalk disable color when stdout is not a TTY (pm2 pipes).
+  // Force ANSI so rebuild logs stay colored like an interactive terminal.
+  const env = { ...process.env, SSG_REBUILD: '0', FORCE_COLOR: '3', CLICOLOR_FORCE: '1' };
+  delete env.NO_COLOR;
+
   const child = spawn('npm', ['run', 'build'], {
     cwd: ROOT,
-    env: { ...process.env, SSG_REBUILD: '0' }, // prevent nested rebuild triggers
+    env,
     stdio: 'inherit',
     shell: false,
   });

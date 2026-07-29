@@ -6,7 +6,12 @@ import api, {
   setStoredUser,
 } from '../api.js';
 
-const initialToken = getStoredToken();
+/** SSG HTML is always anonymous — never seed auth from localStorage for that boot. */
+function hasSsgPreloadedState() {
+  return typeof window !== 'undefined' && window.__PRELOADED_STATE__ != null;
+}
+
+const initialToken = hasSsgPreloadedState() ? null : getStoredToken();
 const initialUser = initialToken ? getStoredUser() : null;
 
 export const hydrateAuth = createAsyncThunk('auth/hydrate', async () => {

@@ -14,26 +14,24 @@ import theme from './theme.js';
 import App from './App.jsx';
 import i18n, { setStoredLang } from './i18n/index.js';
 import { startSse } from './sse.js';
-import { hydrateAuth } from './store/authSlice.js';
-import { getStoredToken, getStoredUser } from './api.js';
+import AuthSessionBootstrap from './components/AuthSessionBootstrap.jsx';
 import { SSG_LANG } from '@shared/ssgLang.js';
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const emotionCache = createCache({ key: 'css' });
 
+const ANON_AUTH = {
+  token: null,
+  user: null,
+  status: 'idle',
+  error: null,
+};
+
 function buildClientPreloadedState() {
   const raw = typeof window !== 'undefined' ? window.__PRELOADED_STATE__ : null;
   if (!raw || typeof raw !== 'object') return undefined;
-  const token = getStoredToken();
-  return {
-    ...raw,
-    auth: {
-      token,
-      user: token ? getStoredUser() : null,
-      status: token ? 'loading' : 'idle',
-      error: null,
-    },
-  };
+  // Force anonymous auth so the first client render matches SSG AppBar HTML.
+  return { ...raw, auth: { ...ANON_AUTH } };
 }
 
 async function boot() {
@@ -49,8 +47,6 @@ async function boot() {
   }
 
   const store = createAppStore(preloaded);
-
-  store.dispatch(hydrateAuth());
   startSse(store);
 
   const tree = (
@@ -61,6 +57,7 @@ async function boot() {
             <ThemeProvider theme={theme}>
               <CssBaseline />
               <BrowserRouter>
+                <AuthSessionBootstrap />
                 <App />
               </BrowserRouter>
             </ThemeProvider>

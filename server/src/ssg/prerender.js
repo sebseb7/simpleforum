@@ -182,7 +182,7 @@ export async function prerenderAll(dbStore, opts = {}) {
   const written = [];
   const ssgCssDir = path.join(distDir, 'ssg-css');
   fs.rmSync(ssgCssDir, { recursive: true, force: true });
-  fs.rmSync(path.join(distDir, 'media'), { recursive: true, force: true });
+  // Keep dist/media/ across runs — files are content-hashed; avoids re-encoding AVIF.
 
   log.info(`prerender start (${paths.length} paths, lang=${SSG_LANG})`);
 
@@ -202,7 +202,6 @@ export async function prerenderAll(dbStore, opts = {}) {
 
     // Extract data: images from bodies into /media/*.avif before SSR so HTML stays small.
     const mediaCount = await materializeStateBodyImages(distDir, preloadedState);
-    const images = mediaCount > 0 || hadOg ? 'yes' : 'no';
 
     // Rebuild topic JSON-LD after image materialization so `image` is always present.
     let finalJsonLd = jsonLd;
@@ -234,7 +233,7 @@ export async function prerenderAll(dbStore, opts = {}) {
 
     const kb = (Buffer.byteLength(page, 'utf8') / 1024).toFixed(1);
     log.info(
-      `${urlPath}  images=${images}  media=${mediaCount}  og=${hadOg ? 'yes' : 'no'}  ${kb}kb  ${Date.now() - t0}ms`,
+      `${urlPath}  media=${mediaCount}  og=${hadOg ? 'yes' : 'no'}  ${kb}kb  ${Date.now() - t0}ms`,
     );
   }
 
