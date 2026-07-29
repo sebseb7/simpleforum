@@ -1,0 +1,2 @@
+# Visual regression baselines (Playwright toHaveScreenshot)
+# Update: npm run test:e2e:update-snapshots
