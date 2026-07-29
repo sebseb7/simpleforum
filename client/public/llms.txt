@@ -11,7 +11,7 @@ Public pages list forum sections and topics; starting or joining a debate requir
 
 ## Forums
 
-- [Generate Debate English](/section/generate-debate-english): Open English debate section
+- [General Debate English](/section/general-debate-english): Open English debate section
 - [Announcements English](/section/announcements-english): English announcements (admin-created topics)
 - [Allgemein - Deutsch](/section/allgemein-deutsch): Offene deutschsprachige Debatten
 - [Ankündigungen - Deutsch](/section/ankuendigungen-deutsch): Deutsche Ankündigungen (Admin-Themen)

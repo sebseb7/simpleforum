@@ -107,8 +107,8 @@ function seedInitialContent(db) {
     `);
 
     const enDebate = insertSection.run(
-      'Generate Debate English',
-      'generate-debate-english',
+      'General Debate English',
+      'general-debate-english',
       'Open topics for everyone',
       'en',
       0,
