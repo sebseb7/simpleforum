@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { openDatabase } from './db.js';
+import {
+  compressionMiddleware,
+  cacheControlMiddleware,
+} from './middleware/httpCache.js';
 import createGoogleAuthRouter from './api/auth/google.js';
 import createTestLoginRouter from './api/auth/testLogin.js';
 import createMeRouter from './api/me.js';
@@ -26,12 +30,20 @@ const port = Number(process.env.PORT) || 3001;
 const store = openDatabase(process.env.DATABASE_PATH || './server/data/romanum.sqlite');
 
 const app = express();
+
+// Strong ETags so If-None-Match can yield 304 for unchanged JSON bodies.
+app.set('etag', 'strong');
+app.set('x-powered-by', false);
+
+app.use(compressionMiddleware());
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
     credentials: true,
+    exposedHeaders: ['ETag', 'Cache-Control'],
   }),
 );
+app.use(cacheControlMiddleware);
 app.use(express.json({ limit: '1mb' }));
 
 app.use((req, res, next) => {

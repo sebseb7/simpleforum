@@ -64,6 +64,10 @@ class ForumTopic extends Component {
       this.setState({ editing: false, editError: null });
       this.load(0);
     }
+    // Anonymous fetches redact media; reload once signed in so links/images appear.
+    if (!prevProps.user && this.props.user) {
+      this.load(this.props.postsOffset || 0);
+    }
     if (this.props.deletedNavigate) {
       const { sectionId } = this.props.deletedNavigate;
       this.props.clearDeletedNavigate();

@@ -5,13 +5,18 @@ import { mapTopic } from './sections.js';
 import { parseWindow, windowMeta } from '../pagination.js';
 import { validateTopicInput } from '../content/validate.js';
 import { ContentValidationError, sendContentError } from '../content/errors.js';
+import { redactAnonymousHtml } from '../../../shared/redactAnonymousHtml.js';
+import { shouldRedactAnonymousMedia } from '../content/anonymousMedia.js';
 
-function mapPost(row, starredIds = null) {
+function mapPost(row, starredIds = null, { forAnonymous = false } = {}) {
   if (!row) return null;
+  const bodyHtml = shouldRedactAnonymousMedia(row, !forAnonymous)
+    ? redactAnonymousHtml(row.body_html)
+    : row.body_html;
   return {
     id: row.id,
     topicId: row.topic_id,
-    bodyHtml: row.body_html,
+    bodyHtml,
     authorId: row.author_id,
     authorName: row.author_name,
     authorPicture: row.author_picture || null,
@@ -32,6 +37,7 @@ export default function createTopicsRouter(store) {
     }
 
     const { offset, limit } = parseWindow(req.query, { defaultLimit: 50 });
+    const forAnonymous = !req.user;
 
     let topicStarred = null;
     let postStarred = null;
@@ -44,11 +50,11 @@ export default function createTopicsRouter(store) {
       );
     }
 
-    const topic = mapTopic(topicRow, topicStarred);
+    const topic = mapTopic(topicRow, topicStarred, { forAnonymous });
     const total = store.posts.countByTopic.get(id)?.n ?? 0;
     const posts = store.posts.listByTopic
       .all(id, limit, offset)
-      .map((row) => mapPost(row, postStarred));
+      .map((row) => mapPost(row, postStarred, { forAnonymous }));
     return res.json({
       topic,
       posts,

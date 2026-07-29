@@ -32,9 +32,10 @@ const PURIFY_CONFIG = {
     'style',
     'class',
     'data-list',
+    'data-forum-placeholder',
   ],
   ALLOW_DATA_ATTR: false,
-  ADD_ATTR: ['target'],
+  ADD_ATTR: ['target', 'data-forum-placeholder'],
 };
 
 /** Defense-in-depth sanitize before rendering forum HTML as React nodes. */

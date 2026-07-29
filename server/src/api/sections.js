@@ -4,6 +4,8 @@ import { broadcast } from '../sse.js';
 import { parseWindow, windowMeta } from '../pagination.js';
 import { validateTopicInput, validateSectionInput } from '../content/validate.js';
 import { ContentValidationError, sendContentError } from '../content/errors.js';
+import { redactAnonymousHtml } from '../../../shared/redactAnonymousHtml.js';
+import { shouldRedactAnonymousMedia } from '../content/anonymousMedia.js';
 
 const SUPPORTED_SECTION_LANGS = new Set(['en', 'de']);
 
@@ -27,14 +29,17 @@ function mapSection(row) {
   };
 }
 
-function mapTopic(row, starredIds = null) {
+function mapTopic(row, starredIds = null, { forAnonymous = false } = {}) {
   if (!row) return null;
+  const bodyHtml = shouldRedactAnonymousMedia(row, !forAnonymous)
+    ? redactAnonymousHtml(row.body_html)
+    : row.body_html;
   return {
     id: row.id,
     sectionId: row.section_id,
     sectionTitle: row.section_title || null,
     title: row.title,
-    bodyHtml: row.body_html,
+    bodyHtml,
     authorId: row.author_id,
     authorName: row.author_name,
     authorPicture: row.author_picture || null,
@@ -145,7 +150,7 @@ export default function createSectionsRouter(store) {
     const total = store.topics.countBySection.get(sectionId)?.n ?? 0;
     const topics = store.topics.listBySection
       .all(sectionId, limit, offset)
-      .map((row) => mapTopic(row, starredIds));
+      .map((row) => mapTopic(row, starredIds, { forAnonymous: !req.user }));
     return res.json({
       section: mapSection(section),
       topics,

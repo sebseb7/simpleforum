@@ -25,6 +25,7 @@
     "@react-oauth/google": "^0.13.5",
     "@reduxjs/toolkit": "^2.12.0",
     "better-sqlite3": "^13.0.2",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dayjs": "^1.11.21",
     "dompurify": "^3.4.12",

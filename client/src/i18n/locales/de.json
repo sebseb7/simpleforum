@@ -101,6 +101,10 @@
     "messageRequired": "Nachricht ist erforderlich",
     "postFailed": "Antwort konnte nicht gesendet werden"
   },
+  "content": {
+    "anonLink": "Link (anmelden zum Anzeigen)",
+    "anonImage": "Bild (anmelden zum Anzeigen)"
+  },
   "contentFilter": {
     "title": "Einige Inhalte wurden aus Sicherheitsgründen angepasst",
     "warnings": {

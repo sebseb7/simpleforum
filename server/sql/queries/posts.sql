@@ -3,9 +3,13 @@ SELECT
   p.id, p.topic_id, p.body_html, p.author_id, p.created_at,
   u.name AS author_name,
   CASE WHEN u.hide_avatar = 1 THEN NULL ELSE u.picture END AS author_picture,
+  u.is_admin AS author_is_admin,
+  sec.admin_only_topics AS section_admin_only_topics,
   (SELECT COUNT(*) FROM stars s WHERE s.target_type = 'post' AND s.target_id = p.id) AS star_count
 FROM posts p
 JOIN users u ON u.id = p.author_id
+JOIN topics t ON t.id = p.topic_id
+JOIN sections sec ON sec.id = t.section_id
 WHERE p.topic_id = ?
 ORDER BY p.created_at DESC, p.id DESC
 LIMIT ? OFFSET ?;
@@ -18,9 +22,13 @@ SELECT
   p.id, p.topic_id, p.body_html, p.author_id, p.created_at,
   u.name AS author_name,
   CASE WHEN u.hide_avatar = 1 THEN NULL ELSE u.picture END AS author_picture,
+  u.is_admin AS author_is_admin,
+  sec.admin_only_topics AS section_admin_only_topics,
   (SELECT COUNT(*) FROM stars s WHERE s.target_type = 'post' AND s.target_id = p.id) AS star_count
 FROM posts p
 JOIN users u ON u.id = p.author_id
+JOIN topics t ON t.id = p.topic_id
+JOIN sections sec ON sec.id = t.section_id
 WHERE p.id = ?;
 
 -- name: insert

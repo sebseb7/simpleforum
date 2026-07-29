@@ -101,6 +101,10 @@
     "messageRequired": "Message is required",
     "postFailed": "Failed to post"
   },
+  "content": {
+    "anonLink": "Link (sign in to view)",
+    "anonImage": "Image (sign in to view)"
+  },
   "contentFilter": {
     "title": "Some content was adjusted for safety",
     "warnings": {

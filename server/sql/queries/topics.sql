@@ -3,7 +3,9 @@ SELECT
   t.id, t.section_id, t.title, t.body_html, t.author_id, t.is_closed, t.created_at, t.updated_at,
   u.name AS author_name,
   CASE WHEN u.hide_avatar = 1 THEN NULL ELSE u.picture END AS author_picture,
+  u.is_admin AS author_is_admin,
   sec.title AS section_title,
+  sec.admin_only_topics AS section_admin_only_topics,
   (SELECT COUNT(*) FROM posts p WHERE p.topic_id = t.id) AS post_count,
   (SELECT COUNT(*) FROM stars s WHERE s.target_type = 'topic' AND s.target_id = t.id) AS star_count
 FROM topics t
@@ -22,7 +24,9 @@ SELECT
   u.name AS author_name,
   CASE WHEN u.hide_avatar = 1 THEN NULL ELSE u.picture END AS author_picture,
   u.email AS author_email,
+  u.is_admin AS author_is_admin,
   sec.title AS section_title,
+  sec.admin_only_topics AS section_admin_only_topics,
   (SELECT COUNT(*) FROM posts p WHERE p.topic_id = t.id) AS post_count,
   (SELECT COUNT(*) FROM stars s WHERE s.target_type = 'topic' AND s.target_id = t.id) AS star_count
 FROM topics t

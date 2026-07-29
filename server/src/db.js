@@ -6,6 +6,9 @@ import Database from 'better-sqlite3';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sqlDir = path.resolve(__dirname, '../sql');
 
+/** Log named SQL statements slower than this (ms). */
+const SLOW_SQL_MS = Number(process.env.SLOW_SQL_MS) || 2;
+
 function parseNamedQueries(filePath) {
   const raw = fs.readFileSync(filePath, 'utf8');
   const parts = raw.split(/--\s*name:\s*(\w+)/);
@@ -18,12 +21,33 @@ function parseNamedQueries(filePath) {
   return queries;
 }
 
+function wrapStatement(stmt, label) {
+  const timed = (method) => (...args) => {
+    const started = performance.now();
+    try {
+      return stmt[method](...args);
+    } finally {
+      const ms = performance.now() - started;
+      if (ms >= SLOW_SQL_MS) {
+        console.log(`slow sql ${ms.toFixed(2)}ms [${label}]`);
+      }
+    }
+  };
+  return {
+    get: timed('get'),
+    all: timed('all'),
+    run: timed('run'),
+    iterate: timed('iterate'),
+  };
+}
+
 function prepareQueryFile(db, fileName) {
   const filePath = path.join(sqlDir, 'queries', fileName);
   const named = parseNamedQueries(filePath);
+  const ns = path.basename(fileName, '.sql');
   const prepared = {};
   for (const [name, sql] of Object.entries(named)) {
-    prepared[name] = db.prepare(sql);
+    prepared[name] = wrapStatement(db.prepare(sql), `${ns}.${name}`);
   }
   return prepared;
 }
