@@ -57,8 +57,10 @@ const api = {
     return request('/me', { method: 'DELETE' });
   },
 
-  getSections() {
-    return request('/sections');
+  getSections({ lang, all } = {}) {
+    if (all) return request('/sections?all=1');
+    const q = lang ? `?lang=${encodeURIComponent(lang)}` : '';
+    return request(`/sections${q}`);
   },
 
   createSection(payload) {

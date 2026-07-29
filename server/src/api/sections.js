@@ -2,12 +2,20 @@ import { Router } from 'express';
 import { requireAuth, requireAdmin, optionalAuth } from '../auth.js';
 import { broadcast } from '../sse.js';
 
+const SUPPORTED_SECTION_LANGS = new Set(['en', 'de']);
+
+function normalizeLang(value, fallback = 'en') {
+  const lang = String(value || fallback).toLowerCase().slice(0, 2);
+  return SUPPORTED_SECTION_LANGS.has(lang) ? lang : fallback;
+}
+
 function mapSection(row) {
   if (!row) return null;
   return {
     id: row.id,
     title: row.title,
     description: row.description,
+    lang: row.lang || 'en',
     adminOnlyTopics: !!row.admin_only_topics,
     sortOrder: row.sort_order,
     createdBy: row.created_by,
@@ -39,19 +47,29 @@ function mapTopic(row, starredIds = null) {
 export default function createSectionsRouter(store) {
   const router = Router();
 
-  router.get('/sections', (_req, res) => {
-    const rows = store.sections.list.all();
+  router.get('/sections', (req, res) => {
+    const all = req.query.all === '1' || req.query.all === 'true';
+    const rows = all
+      ? store.sections.list.all()
+      : store.sections.listByLang.all(normalizeLang(req.query.lang));
     res.json({ sections: rows.map(mapSection) });
   });
 
   router.post('/sections', requireAuth, requireAdmin, (req, res) => {
-    const { title, description = '', adminOnlyTopics = false, sortOrder = 0 } = req.body || {};
+    const {
+      title,
+      description = '',
+      adminOnlyTopics = false,
+      sortOrder = 0,
+      lang = 'en',
+    } = req.body || {};
     if (!title?.trim()) {
       return res.status(400).json({ error: 'title required' });
     }
     const result = store.sections.insert.run(
       title.trim(),
       description || '',
+      normalizeLang(lang),
       adminOnlyTopics ? 1 : 0,
       Number(sortOrder) || 0,
       req.user.id,
@@ -69,6 +87,8 @@ export default function createSectionsRouter(store) {
     }
     const title = req.body.title ?? existing.title;
     const description = req.body.description ?? existing.description;
+    const lang =
+      req.body.lang !== undefined ? normalizeLang(req.body.lang) : normalizeLang(existing.lang);
     const adminOnlyTopics =
       req.body.adminOnlyTopics !== undefined
         ? !!req.body.adminOnlyTopics
@@ -76,7 +96,14 @@ export default function createSectionsRouter(store) {
     const sortOrder =
       req.body.sortOrder !== undefined ? Number(req.body.sortOrder) : existing.sort_order;
 
-    store.sections.update.run(title, description, adminOnlyTopics ? 1 : 0, sortOrder, id);
+    store.sections.update.run(
+      title,
+      description,
+      lang,
+      adminOnlyTopics ? 1 : 0,
+      sortOrder,
+      id,
+    );
     const section = mapSection(store.sections.findById.get(id));
     broadcast({ type: 'section.updated', payload: { sectionId: section.id } });
     return res.json({ section });

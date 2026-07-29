@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -18,10 +19,13 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import MenuIcon from '@mui/icons-material/Menu';
 import SaveIcon from '@mui/icons-material/Save';
 import LoginButton from './LoginButton.jsx';
 import { logout, deleteAccount, updateProfile } from '../store/authSlice.js';
+import { changeLanguage } from '../i18n/index.js';
 
 class AppBarNav extends Component {
   state = {
@@ -75,7 +79,12 @@ class AppBarNav extends Component {
     this.props.logout();
   };
 
+  handleLanguage = (_event, lang) => {
+    if (lang) changeLanguage(lang);
+  };
+
   handleHideAvatarChange = async (event) => {
+    const { t } = this.props;
     const hideAvatar = event.target.checked;
     const previous = !!this.props.user?.hideAvatar;
     this.setState({ hideAvatar, settingsError: null });
@@ -84,15 +93,16 @@ class AppBarNav extends Component {
     } catch (err) {
       this.setState({
         hideAvatar: previous,
-        settingsError: err.message || 'Could not update avatar visibility',
+        settingsError: err.message || t('account.updateAvatarFailed'),
       });
     }
   };
 
   handleSaveDisplayName = async () => {
+    const { t } = this.props;
     const name = this.state.displayName.trim();
     if (!name) {
-      this.setState({ settingsError: 'Display name is required' });
+      this.setState({ settingsError: t('account.nameRequired') });
       return;
     }
     if (name === this.props.user?.name) return;
@@ -107,16 +117,16 @@ class AppBarNav extends Component {
     } catch (err) {
       this.setState({
         settingsSaving: false,
-        settingsError: err.message || 'Could not update display name',
+        settingsError: err.message || t('account.updateNameFailed'),
       });
     }
   };
 
   handleDeleteAccount = async () => {
-    const { user, deleteAccount } = this.props;
+    const { user, deleteAccount, t } = this.props;
     const { confirmName } = this.state;
     if (!user || confirmName.trim() !== user.name) {
-      this.setState({ deleteError: 'Type your exact display name to confirm.' });
+      this.setState({ deleteError: t('account.confirmNameMismatch') });
       return;
     }
     this.setState({ deleting: true, deleteError: null });
@@ -130,13 +140,13 @@ class AppBarNav extends Component {
     } catch (err) {
       this.setState({
         deleting: false,
-        deleteError: err.message || 'Could not delete account',
+        deleteError: err.message || t('account.deleteFailed'),
       });
     }
   };
 
   render() {
-    const { user } = this.props;
+    const { user, t, i18n } = this.props;
     const {
       navAnchor,
       menuAnchor,
@@ -155,6 +165,37 @@ class AppBarNav extends Component {
     const avatarSrc = user && !user.hideAvatar ? user.picture || undefined : undefined;
     const nameDirty = displayName.trim() !== (user?.name || '');
     const canSaveName = nameDirty && displayName.trim().length > 0 && !settingsSaving;
+    const lang = (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
+
+    const langSwitch = (
+      <ToggleButtonGroup
+        size="small"
+        exclusive
+        value={lang}
+        onChange={this.handleLanguage}
+        aria-label={t('nav.language')}
+        sx={{
+          flexShrink: 0,
+          '& .MuiToggleButton-root': {
+            color: 'rgba(255,255,255,0.75)',
+            borderColor: 'rgba(255,255,255,0.28)',
+            px: 1,
+            py: 0.25,
+            fontSize: '0.75rem',
+            lineHeight: 1.4,
+            '&.Mui-selected': {
+              color: '#fffdf8',
+              bgcolor: 'rgba(255,255,255,0.16)',
+              borderColor: 'rgba(255,255,255,0.4)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' },
+            },
+          },
+        }}
+      >
+        <ToggleButton value="en">{t('nav.langEn')}</ToggleButton>
+        <ToggleButton value="de">{t('nav.langDe')}</ToggleButton>
+      </ToggleButtonGroup>
+    );
 
     return (
       <AppBar
@@ -175,7 +216,7 @@ class AppBarNav extends Component {
         >
           <IconButton
             color="inherit"
-            aria-label="Open navigation"
+            aria-label={t('nav.openNav')}
             onClick={this.openNav}
             sx={{ display: { xs: 'inline-flex', sm: 'none' }, flexShrink: 0 }}
           >
@@ -189,14 +230,14 @@ class AppBarNav extends Component {
             transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           >
             <MenuItem component={RouterLink} to="/" onClick={this.closeNav}>
-              Forums
+              {t('nav.forums')}
             </MenuItem>
             <MenuItem component={RouterLink} to="/starred" onClick={this.closeNav}>
-              Starred
+              {t('nav.starred')}
             </MenuItem>
             {user?.isAdmin && (
               <MenuItem component={RouterLink} to="/admin/sections" onClick={this.closeNav}>
-                Admin
+                {t('nav.admin')}
               </MenuItem>
             )}
           </Menu>
@@ -218,7 +259,7 @@ class AppBarNav extends Component {
               fontSize: { xs: '1.15rem', sm: '1.5rem' },
             }}
           >
-            QuixPOS Forum
+            {t('brand')}
           </Typography>
 
           <Box
@@ -230,17 +271,19 @@ class AppBarNav extends Component {
             }}
           >
             <Button color="inherit" component={RouterLink} to="/">
-              Forums
+              {t('nav.forums')}
             </Button>
             <Button color="inherit" component={RouterLink} to="/starred">
-              Starred
+              {t('nav.starred')}
             </Button>
             {user?.isAdmin && (
               <Button color="inherit" component={RouterLink} to="/admin/sections">
-                Admin
+                {t('nav.admin')}
               </Button>
             )}
           </Box>
+
+          {langSwitch}
 
           {user ? (
             <>
@@ -250,7 +293,7 @@ class AppBarNav extends Component {
                 sx={{ alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}
                 onClick={this.openMenu}
               >
-                <IconButton size="small" sx={{ p: 0 }} aria-label="Account menu">
+                <IconButton size="small" sx={{ p: 0 }} aria-label={t('account.menu')}>
                   <Avatar src={avatarSrc} sx={{ width: 32, height: 32 }}>
                     {user.name?.[0]}
                   </Avatar>
@@ -280,17 +323,17 @@ class AppBarNav extends Component {
                   {user.email}
                 </Typography>
                 <Button fullWidth variant="outlined" onClick={this.handleLogout} sx={{ mb: 2 }}>
-                  Log out
+                  {t('account.logOut')}
                 </Button>
 
                 <Divider sx={{ mb: 2 }} />
                 <Typography variant="subtitle2" gutterBottom>
-                  Settings
+                  {t('account.settings')}
                 </Typography>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Display name"
+                  label={t('account.displayName')}
                   value={displayName}
                   onChange={(e) =>
                     this.setState({
@@ -313,7 +356,7 @@ class AppBarNav extends Component {
                           <IconButton
                             edge="end"
                             size="small"
-                            aria-label="Save display name"
+                            aria-label={t('account.saveDisplayName')}
                             onClick={this.handleSaveDisplayName}
                             disabled={!canSaveName}
                           >
@@ -332,7 +375,7 @@ class AppBarNav extends Component {
                       disabled={settingsSaving}
                     />
                   }
-                  label="Hide my avatar"
+                  label={t('account.hideAvatar')}
                   sx={{ mb: 1 }}
                 />
                 {settingsError && (
@@ -343,11 +386,10 @@ class AppBarNav extends Component {
 
                 <Divider sx={{ mb: 2, mt: 1 }} />
                 <Typography variant="subtitle2" color="error" gutterBottom>
-                  Delete account
+                  {t('account.deleteAccount')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                  Permanently removes your profile, topics, posts, and stars. Type{' '}
-                  <strong>{user.name}</strong> to confirm.
+                  {t('account.deleteAccountBody', { name: user.name })}
                 </Typography>
                 {deleteError && (
                   <Alert severity="error" sx={{ mb: 1.5 }}>
@@ -357,7 +399,7 @@ class AppBarNav extends Component {
                 <TextField
                   fullWidth
                   size="small"
-                  label="Confirm display name"
+                  label={t('account.confirmDisplayName')}
                   value={confirmName}
                   onChange={(e) => this.setState({ confirmName: e.target.value })}
                   disabled={deleting}
@@ -370,7 +412,7 @@ class AppBarNav extends Component {
                   onClick={this.handleDeleteAccount}
                   disabled={deleting || confirmName.trim() !== user.name}
                 >
-                  {deleting ? 'Deleting…' : 'Delete my account'}
+                  {deleting ? t('account.deleting') : t('account.deleteMyAccount')}
                 </Button>
               </Popover>
             </>
@@ -381,7 +423,7 @@ class AppBarNav extends Component {
                 onClick={this.openLogin}
                 sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
               >
-                Sign in
+                {t('nav.signIn')}
               </Button>
               <Popover
                 open={loginOpen}
@@ -396,7 +438,7 @@ class AppBarNav extends Component {
                 }}
               >
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                  Use Google to sign in.
+                  {t('nav.signInHint')}
                 </Typography>
                 <LoginButton />
               </Popover>
@@ -414,4 +456,4 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = { logout, deleteAccount, updateProfile };
 
-export default connect(mapStateToProps, mapDispatchToProps)(AppBarNav);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(AppBarNav));

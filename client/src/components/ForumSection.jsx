@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -14,6 +15,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import withRouter from '../withRouter.jsx';
 import { fetchSectionTopics } from '../store/topicsSlice.js';
+import { formatForumDate } from '../i18n/formatDate.js';
 import ForumTopicForm from './ForumTopicForm.jsx';
 import ForumStarButton from './ForumStarButton.jsx';
 import ProtectedAction from './ProtectedAction.jsx';
@@ -42,7 +44,7 @@ class ForumSection extends Component {
   };
 
   render() {
-    const { section, topics, listStatus, error, user, params } = this.props;
+    const { section, topics, listStatus, error, user, params, t } = this.props;
     const sectionId = Number(params.sectionId);
     const ready = section?.id === sectionId && listStatus === 'succeeded';
 
@@ -51,7 +53,7 @@ class ForumSection extends Component {
         {ready && (
           <Breadcrumbs sx={{ mb: 2 }}>
             <Link component={RouterLink} to="/" underline="hover" color="inherit">
-              Forums
+              {t('nav.forums')}
             </Link>
             <Typography color="text.primary">{section.title}</Typography>
           </Breadcrumbs>
@@ -64,7 +66,7 @@ class ForumSection extends Component {
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
               <Typography variant="h4">{section.title}</Typography>
               {section.adminOnlyTopics && (
-                <Chip size="small" label="Admin creates topics" variant="outlined" />
+                <Chip size="small" label={t('section.adminCreatesTopics')} variant="outlined" />
               )}
             </Stack>
             <Typography color="text.secondary" sx={{ mb: 3 }}>
@@ -86,12 +88,18 @@ class ForumSection extends Component {
                           <Typography variant="subtitle1" fontWeight={600}>
                             {topic.title}
                           </Typography>
-                          {topic.isClosed && <Chip size="small" label="Closed" color="default" />}
+                          {topic.isClosed && (
+                            <Chip size="small" label={t('section.closed')} color="default" />
+                          )}
                         </Stack>
                       }
                       secondary={
                         <Typography variant="body2" color="text.secondary" component="span">
-                          by {topic.authorName} · {topic.postCount} replies · updated {topic.updatedAt}
+                          {t('section.topicMeta', {
+                            name: topic.authorName,
+                            count: topic.postCount,
+                            date: formatForumDate(topic.updatedAt),
+                          })}
                         </Typography>
                       }
                     />
@@ -113,7 +121,7 @@ class ForumSection extends Component {
               ))}
               {topics.length === 0 && (
                 <Box sx={{ p: 3 }}>
-                  <Typography color="text.secondary">No topics yet.</Typography>
+                  <Typography color="text.secondary">{t('section.noTopics')}</Typography>
                 </Box>
               )}
             </List>
@@ -123,7 +131,7 @@ class ForumSection extends Component {
             ) : section.adminOnlyTopics ? null : (
               <ProtectedAction
                 user={user}
-                message="Sign in to start a topic."
+                message={t('section.signInToStart')}
               />
             )}
           </>
@@ -147,4 +155,6 @@ const mapStateToProps = (state, ownProps) => {
 };
 const mapDispatchToProps = { fetchSectionTopics };
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(ForumSection));
+export default withRouter(
+  withTranslation()(connect(mapStateToProps, mapDispatchToProps)(ForumSection)),
+);

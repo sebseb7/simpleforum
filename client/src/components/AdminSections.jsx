@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
@@ -12,12 +14,18 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
 import { fetchSections, createSection, updateSection } from '../store/sectionsSlice.js';
+
+function uiLang(i18n) {
+  return (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
+}
 
 class AdminSections extends Component {
   state = {
     title: '',
     description: '',
+    lang: 'en',
     adminOnlyTopics: false,
     sortOrder: 0,
     editingId: null,
@@ -25,13 +33,15 @@ class AdminSections extends Component {
   };
 
   componentDidMount() {
-    this.props.fetchSections();
+    this.setState({ lang: uiLang(this.props.i18n) });
+    this.props.fetchSections({ all: true });
   }
 
   resetForm = () => {
     this.setState({
       title: '',
       description: '',
+      lang: uiLang(this.props.i18n),
       adminOnlyTopics: false,
       sortOrder: 0,
       editingId: null,
@@ -44,6 +54,7 @@ class AdminSections extends Component {
       editingId: section.id,
       title: section.title,
       description: section.description || '',
+      lang: section.lang || 'en',
       adminOnlyTopics: !!section.adminOnlyTopics,
       sortOrder: section.sortOrder || 0,
       error: null,
@@ -52,9 +63,10 @@ class AdminSections extends Component {
 
   handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, description, adminOnlyTopics, sortOrder, editingId } = this.state;
+    const { t } = this.props;
+    const { title, description, lang, adminOnlyTopics, sortOrder, editingId } = this.state;
     if (!title.trim()) {
-      this.setState({ error: 'Title required' });
+      this.setState({ error: t('admin.titleRequired') });
       return;
     }
     try {
@@ -63,6 +75,7 @@ class AdminSections extends Component {
           id: editingId,
           title: title.trim(),
           description,
+          lang,
           adminOnlyTopics,
           sortOrder: Number(sortOrder) || 0,
         }).unwrap();
@@ -70,47 +83,48 @@ class AdminSections extends Component {
         await this.props.createSection({
           title: title.trim(),
           description,
+          lang,
           adminOnlyTopics,
           sortOrder: Number(sortOrder) || 0,
         }).unwrap();
       }
       this.resetForm();
     } catch (err) {
-      this.setState({ error: err.message || 'Save failed' });
+      this.setState({ error: err.message || t('admin.saveFailed') });
     }
   };
 
   render() {
-    const { user, sections } = this.props;
-    const { title, description, adminOnlyTopics, sortOrder, editingId, error } = this.state;
+    const { user, sections, t } = this.props;
+    const { title, description, lang, adminOnlyTopics, sortOrder, editingId, error } = this.state;
 
     if (!user) {
-      return <Alert severity="info">Sign in to manage sections.</Alert>;
+      return <Alert severity="info">{t('admin.signIn')}</Alert>;
     }
     if (!user.isAdmin) {
-      return <Alert severity="warning">Admin access required.</Alert>;
+      return <Alert severity="warning">{t('admin.accessRequired')}</Alert>;
     }
 
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          Manage sections
+          {t('admin.title')}
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Create forum sections. Mark a section admin-only if only admins may open new topics (everyone can still reply).
+          {t('admin.blurb')}
         </Typography>
 
         <Box component="form" onSubmit={this.handleSubmit} sx={{ mb: 4 }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Stack spacing={2}>
             <TextField
-              label="Title"
+              label={t('admin.fieldTitle')}
               value={title}
               onChange={(e) => this.setState({ title: e.target.value })}
               fullWidth
             />
             <TextField
-              label="Description"
+              label={t('admin.fieldDescription')}
               value={description}
               onChange={(e) => this.setState({ description: e.target.value })}
               fullWidth
@@ -118,7 +132,17 @@ class AdminSections extends Component {
               minRows={2}
             />
             <TextField
-              label="Sort order"
+              select
+              label={t('admin.fieldLanguage')}
+              value={lang}
+              onChange={(e) => this.setState({ lang: e.target.value })}
+              sx={{ maxWidth: 200 }}
+            >
+              <MenuItem value="en">{t('admin.langEn')}</MenuItem>
+              <MenuItem value="de">{t('admin.langDe')}</MenuItem>
+            </TextField>
+            <TextField
+              label={t('admin.fieldSortOrder')}
               type="number"
               value={sortOrder}
               onChange={(e) => this.setState({ sortOrder: e.target.value })}
@@ -131,15 +155,15 @@ class AdminSections extends Component {
                   onChange={(e) => this.setState({ adminOnlyTopics: e.target.checked })}
                 />
               }
-              label="Only admins can create topics"
+              label={t('admin.adminOnlyTopics')}
             />
             <Stack direction="row" spacing={1}>
               <Button type="submit" variant="contained">
-                {editingId ? 'Update section' : 'Create section'}
+                {editingId ? t('admin.update') : t('admin.create')}
               </Button>
               {editingId && (
                 <Button type="button" onClick={this.resetForm}>
-                  Cancel
+                  {t('admin.cancel')}
                 </Button>
               )}
             </Stack>
@@ -153,13 +177,28 @@ class AdminSections extends Component {
               <ListItem
                 secondaryAction={
                   <Button size="small" onClick={() => this.startEdit(section)}>
-                    Edit
+                    {t('admin.edit')}
                   </Button>
                 }
               >
                 <ListItemText
-                  primary={`${section.title}${section.adminOnlyTopics ? ' (admin topics)' : ''}`}
+                  primary={
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <span>
+                        {section.title}
+                        {section.adminOnlyTopics ? t('admin.adminTopicsSuffix') : ''}
+                      </span>
+                      <Chip
+                        size="small"
+                        label={(section.lang || 'en').toUpperCase()}
+                        variant="outlined"
+                      />
+                    </Stack>
+                  }
                   secondary={section.description || '—'}
+                  slotProps={{
+                    primary: { component: 'div' },
+                  }}
                 />
               </ListItem>
             </React.Fragment>
@@ -177,4 +216,4 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = { fetchSections, createSection, updateSection };
 
-export default connect(mapStateToProps, mapDispatchToProps)(AdminSections);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(AdminSections));

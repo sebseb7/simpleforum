@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -7,98 +8,71 @@ import Breadcrumbs from '@mui/material/Breadcrumbs';
 
 class PrivacyPolicy extends Component {
   render() {
+    const { t } = this.props;
     return (
       <Box>
         <Breadcrumbs sx={{ mb: 2 }}>
           <Link component={RouterLink} to="/" underline="hover" color="inherit">
-            Forums
+            {t('nav.forums')}
           </Link>
-          <Typography color="text.primary">Privacy Policy</Typography>
+          <Typography color="text.primary">{t('privacy.title')}</Typography>
         </Breadcrumbs>
 
         <Typography variant="h3" gutterBottom>
-          Privacy Policy
+          {t('privacy.title')}
         </Typography>
 
-        <Typography paragraph>
-          QuixPOS public discussion board. This page explains what information we handle when you
-          browse or sign in.
-        </Typography>
+        <Typography paragraph>{t('privacy.intro')}</Typography>
 
         <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
-          Public content
+          {t('privacy.publicTitle')}
         </Typography>
-        <Typography paragraph>
-          Sections, topics, and posts are public. Anyone can read them without an account,
-          including via direct links. Do not post personal data, secrets, or anything you are
-          not comfortable sharing publicly. Starred items are tied to your account and are only
-          shown to you when signed in, but the underlying topics and posts remain public.
-        </Typography>
+        <Typography paragraph>{t('privacy.publicBody')}</Typography>
 
         <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
-          Google Sign-In
+          {t('privacy.googleTitle')}
         </Typography>
+        <Typography paragraph>{t('privacy.googleBody1')}</Typography>
         <Typography paragraph>
-          The only way to sign in is Google Sign-In (Google Identity / OAuth). We do not offer
-          passwords, email magic links, or other login methods. When you sign in, Google shares
-          with us a verified identity token for your Google account. We use that token solely to
-          authenticate you and create or update your forum profile.
-        </Typography>
-        <Typography paragraph>
-          From Google we receive limited profile information typically including your Google
-          account ID, email address, display name, and profile picture URL. We do not receive
-          your Google password. Google’s own practices are described in the{' '}
+          {t('privacy.googleBody2Before')}{' '}
           <Link
             href="https://policies.google.com/privacy"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Google Privacy Policy
+            {t('privacy.googlePrivacyLink')}
           </Link>
-          .
+          {t('privacy.googleBody2After')}
         </Typography>
 
         <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
-          What we store
+          {t('privacy.storeTitle')}
         </Typography>
         <Typography component="div" paragraph>
-          On our servers we store:
+          {t('privacy.storeIntro')}
           <Box component="ul" sx={{ mt: 1, pl: 3 }}>
-            <li>Your Google account subject ID, email, name, and picture URL</li>
-            <li>Topics and posts you create (current title and body only; edits replace the
-              previous text)</li>
-            <li>Which topics and posts you have starred</li>
-            <li>
-              A session token issued after Google Sign-In, kept on your device so you stay signed
-              in
-            </li>
+            <li>{t('privacy.storeItem1')}</li>
+            <li>{t('privacy.storeItem2')}</li>
+            <li>{t('privacy.storeItem3')}</li>
+            <li>{t('privacy.storeItem4')}</li>
           </Box>
         </Typography>
 
         <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
-          Cookies
+          {t('privacy.cookiesTitle')}
         </Typography>
-        <Typography paragraph>
-          After Google Sign-In we store a token on your device.
-          That token identifies your session to our API. Clearing site data or using Log out
-          removes it. We do not use third-party advertising cookies.
-        </Typography>
+        <Typography paragraph>{t('privacy.cookiesBody')}</Typography>
 
         <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
-          Data retention and your choices
+          {t('privacy.retentionTitle')}
         </Typography>
-        <Typography paragraph>
-          Public posts remain until you delete them (or until a topic author deletes the whole
-          topic). You can edit or delete your own topics and posts while signed in. You can log
-          out at any time. You can permanently delete your account from the menu next to your
-          name; that removes your profile along with your topics, posts, and stars.
-        </Typography>
+        <Typography paragraph>{t('privacy.retentionBody')}</Typography>
 
         <Typography variant="h5" gutterBottom sx={{ mt: 3 }}>
-          Contact
+          {t('privacy.contactTitle')}
         </Typography>
         <Typography paragraph>
-          Questions about this policy or your data:{' '}
+          {t('privacy.contactBody')}{' '}
           <Link href="mailto:quixpos@gmail.com">quixpos@gmail.com</Link>
         </Typography>
       </Box>
@@ -106,4 +80,4 @@ class PrivacyPolicy extends Component {
   }
 }
 
-export default PrivacyPolicy;
+export default withTranslation()(PrivacyPolicy);

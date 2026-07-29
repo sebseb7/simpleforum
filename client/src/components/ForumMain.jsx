@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
@@ -12,21 +13,35 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import { fetchSections } from '../store/sectionsSlice.js';
 
+function uiLang(i18n) {
+  return (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
+}
+
 class ForumMain extends Component {
   componentDidMount() {
-    this.props.fetchSections();
+    this.load();
   }
 
+  componentDidUpdate(prevProps) {
+    if (uiLang(prevProps.i18n) !== uiLang(this.props.i18n)) {
+      this.load();
+    }
+  }
+
+  load = () => {
+    this.props.fetchSections({ lang: uiLang(this.props.i18n) });
+  };
+
   render() {
-    const { sections, status, error } = this.props;
+    const { sections, status, error, t } = this.props;
 
     return (
       <Box>
         <Typography variant="h3" gutterBottom>
-				   Welcome
+          {t('home.welcome')}
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 520 }}>
-          Browse every section and topic without signing in. Sign in from the header to start or join a debate.
+          {t('home.blurb')}
         </Typography>
 
         {error && <Alert severity="error">{error}</Alert>}
@@ -45,7 +60,7 @@ class ForumMain extends Component {
                     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                       <Typography variant="h6">{section.title}</Typography>
                       {section.adminOnlyTopics && (
-                        <Chip size="small" label="Admin topics" variant="outlined" />
+                        <Chip size="small" label={t('home.adminTopics')} variant="outlined" />
                       )}
                     </Stack>
                   }
@@ -53,7 +68,7 @@ class ForumMain extends Component {
                     <>
                       {section.description}
                       <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
-                        {section.topicCount} topic{section.topicCount === 1 ? '' : 's'}
+                        {t('home.topicCount', { count: section.topicCount })}
                       </Box>
                     </>
                   }
@@ -66,9 +81,7 @@ class ForumMain extends Component {
           ))}
           {status === 'succeeded' && sections.length === 0 && (
             <Box sx={{ p: 3 }}>
-              <Typography color="text.secondary">
-                No sections yet. An admin can create them under Admin.
-              </Typography>
+              <Typography color="text.secondary">{t('home.noSections')}</Typography>
             </Box>
           )}
         </List>
@@ -85,4 +98,4 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = { fetchSections };
 
-export default connect(mapStateToProps, mapDispatchToProps)(ForumMain);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(ForumMain));

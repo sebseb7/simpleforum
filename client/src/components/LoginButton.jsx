@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -14,19 +15,20 @@ class LoginButton extends Component {
   };
 
   render() {
+    const { t, error } = this.props;
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
       return (
         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', maxWidth: 180 }}>
-          Set VITE_GOOGLE_CLIENT_ID to enable login
+          {t('login.missingClientId')}
         </Typography>
       );
     }
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {this.props.error && (
+        {error && (
           <Alert severity="error" sx={{ py: 0 }}>
-            {this.props.error}
+            {error}
           </Alert>
         )}
         <GoogleLogin
@@ -50,4 +52,4 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = { loginWithGoogle };
 
-export default connect(mapStateToProps, mapDispatchToProps)(LoginButton);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(LoginButton));

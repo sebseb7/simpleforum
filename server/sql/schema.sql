@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS sections (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
+  lang TEXT NOT NULL DEFAULT 'en',
   admin_only_topics INTEGER NOT NULL DEFAULT 0,
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_by INTEGER REFERENCES users(id),

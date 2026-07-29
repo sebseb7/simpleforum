@@ -1,0 +1,166 @@
+{
+  "dateLocale": "en",
+  "quill": {
+    "placeholder": "Write your message…",
+    "resize": {
+      "altTip": "Hold Alt to lock aspect ratio",
+      "floatLeft": "left",
+      "floatRight": "right",
+      "center": "center",
+      "restore": "restore",
+      "inputTip": "Press Enter to apply"
+    }
+  },
+  "brand": "QuixPOS Forum",
+  "nav": {
+    "forums": "Forums",
+    "starred": "Starred",
+    "admin": "Admin",
+    "openNav": "Open navigation",
+    "signIn": "Sign in",
+    "signInHint": "Use Google to sign in.",
+    "language": "Language",
+    "langEn": "EN",
+    "langDe": "DE"
+  },
+  "account": {
+    "menu": "Account menu",
+    "logOut": "Log out",
+    "settings": "Settings",
+    "displayName": "Display name",
+    "saveDisplayName": "Save display name",
+    "hideAvatar": "Hide my avatar",
+    "deleteAccount": "Delete account",
+    "deleteAccountBody": "Permanently removes your profile, topics, posts, and stars. Type {{name}} to confirm.",
+    "confirmDisplayName": "Confirm display name",
+    "deleteMyAccount": "Delete my account",
+    "deleting": "Deleting…",
+    "nameRequired": "Display name is required",
+    "updateAvatarFailed": "Could not update avatar visibility",
+    "updateNameFailed": "Could not update display name",
+    "confirmNameMismatch": "Type your exact display name to confirm.",
+    "deleteFailed": "Could not delete account"
+  },
+  "home": {
+    "welcome": "Welcome",
+    "blurb": "Browse every section and topic without signing in. Sign in from the header to start or join a debate.",
+    "adminTopics": "Admin topics",
+    "topicCount_one": "{{count}} topic",
+    "topicCount_other": "{{count}} topics",
+    "noSections": "No sections yet. An admin can create them under Admin."
+  },
+  "section": {
+    "adminCreatesTopics": "Admin creates topics",
+    "closed": "Closed",
+    "topicMeta": "by {{name}} · {{count}} replies · updated {{date}}",
+    "noTopics": "No topics yet.",
+    "signInToStart": "Sign in to start a topic."
+  },
+  "topic": {
+    "closed": "Closed",
+    "authorMeta": "{{name}} · {{date}}",
+    "edit": "Edit",
+    "closeTopic": "Close topic",
+    "delete": "Delete",
+    "title": "Title",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "closeConfirm": "Close this topic? No new replies will be allowed.",
+    "deleteConfirm": "Delete this topic and all posts? This cannot be undone.",
+    "titleRequired": "Title is required",
+    "updateFailed": "Failed to update topic",
+    "isClosed": "This topic is closed.",
+    "signInToParticipate": "Sign in to participate."
+  },
+  "post": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "messageRequired": "Message is required",
+    "updateFailed": "Failed to update post",
+    "deleteConfirm": "Delete this post?"
+  },
+  "topicForm": {
+    "start": "Start a topic",
+    "title": "Title",
+    "create": "Create topic",
+    "posting": "Posting…",
+    "titleRequired": "Title is required",
+    "createFailed": "Failed to create topic"
+  },
+  "postForm": {
+    "reply": "Reply",
+    "submit": "Post reply",
+    "posting": "Posting…",
+    "messageRequired": "Message is required",
+    "postFailed": "Failed to post"
+  },
+  "star": {
+    "star": "Star",
+    "unstar": "Unstar",
+    "signInToStar": "Sign in to star"
+  },
+  "starred": {
+    "title": "Starred",
+    "topics": "Topics",
+    "posts": "Posts",
+    "signIn": "Sign in to see your starred topics and posts.",
+    "topicMeta": "by {{name}} · {{count}} stars",
+    "postBy": "Post by {{name}}",
+    "postMeta": "{{count}} stars · {{date}}",
+    "noTopics": "No starred topics.",
+    "noPosts": "No starred posts."
+  },
+  "admin": {
+    "signIn": "Sign in to manage sections.",
+    "accessRequired": "Admin access required.",
+    "title": "Manage sections",
+    "blurb": "Create forum sections per language. The home page only lists sections for the active language; direct links still work for every section. Mark a section admin-only if only admins may open new topics (everyone can still reply).",
+    "fieldTitle": "Title",
+    "fieldDescription": "Description",
+    "fieldLanguage": "Language",
+    "langEn": "English",
+    "langDe": "German",
+    "fieldSortOrder": "Sort order",
+    "adminOnlyTopics": "Only admins can create topics",
+    "create": "Create section",
+    "update": "Update section",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "titleRequired": "Title required",
+    "saveFailed": "Save failed",
+    "adminTopicsSuffix": " (admin topics)"
+  },
+  "footer": {
+    "privacy": "Privacy Policy"
+  },
+  "login": {
+    "missingClientId": "Set VITE_GOOGLE_CLIENT_ID to enable login"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "intro": "QuixPOS public discussion board. This page explains what information we handle when you browse or sign in.",
+    "publicTitle": "Public content",
+    "publicBody": "Sections, topics, and posts are public. Anyone can read them without an account, including via direct links. Do not post personal data, secrets, or anything you are not comfortable sharing publicly. Starred items are tied to your account and are only shown to you when signed in, but the underlying topics and posts remain public.",
+    "googleTitle": "Google Sign-In",
+    "googleBody1": "The only way to sign in is Google Sign-In (Google Identity / OAuth). We do not offer passwords, email magic links, or other login methods. When you sign in, Google shares with us a verified identity token for your Google account. We use that token solely to authenticate you and create or update your forum profile.",
+    "googleBody2Before": "From Google we receive limited profile information typically including your Google account ID, email address, display name, and profile picture URL. We do not receive your Google password. Google’s own practices are described in the",
+    "googlePrivacyLink": "Google Privacy Policy",
+    "googleBody2After": ".",
+    "storeTitle": "What we store",
+    "storeIntro": "On our servers we store:",
+    "storeItem1": "Your Google account subject ID, email, name, and picture URL",
+    "storeItem2": "Topics and posts you create (current title and body only; edits replace the previous text)",
+    "storeItem3": "Which topics and posts you have starred",
+    "storeItem4": "A session token issued after Google Sign-In, kept on your device so you stay signed in",
+    "cookiesTitle": "Cookies",
+    "cookiesBody": "After Google Sign-In we store a token on your device. That token identifies your session to our API. Clearing site data or using Log out removes it. We do not use third-party advertising cookies.",
+    "retentionTitle": "Data retention and your choices",
+    "retentionBody": "Public posts remain until you delete them (or until a topic author deletes the whole topic). You can edit or delete your own topics and posts while signed in. You can log out at any time. You can permanently delete your account from the menu next to your name; that removes your profile along with your topics, posts, and stars.",
+    "contactTitle": "Contact",
+    "contactBody": "Questions about this policy or your data:"
+  }
+}

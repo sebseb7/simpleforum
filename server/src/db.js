@@ -42,8 +42,6 @@ export function openDatabase(databasePath) {
   const schema = fs.readFileSync(path.join(sqlDir, 'schema.sql'), 'utf8');
   db.exec(schema);
 
-  migrate(db);
-
   return {
     db,
     users: prepareQueryFile(db, 'users.sql'),
@@ -52,11 +50,4 @@ export function openDatabase(databasePath) {
     posts: prepareQueryFile(db, 'posts.sql'),
     stars: prepareQueryFile(db, 'stars.sql'),
   };
-}
-
-function migrate(db) {
-  const userCols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
-  if (!userCols.includes('hide_avatar')) {
-    db.exec('ALTER TABLE users ADD COLUMN hide_avatar INTEGER NOT NULL DEFAULT 0');
-  }
 }

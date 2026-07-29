@@ -1,11 +1,17 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { createPost } from '../store/postsSlice.js';
-import { ReactQuill, quillModules, quillFormats } from '../quillSetup.js';
+import {
+  ReactQuill,
+  getQuillModules,
+  getQuillPlaceholder,
+  quillFormats,
+} from '../quillSetup.js';
 
 class ForumPostForm extends Component {
   state = {
@@ -16,9 +22,10 @@ class ForumPostForm extends Component {
 
   handleSubmit = async (e) => {
     e.preventDefault();
+    const { t } = this.props;
     const { bodyHtml } = this.state;
     if (!bodyHtml.replace(/<(.|\n)*?>/g, '').trim()) {
-      this.setState({ error: 'Message is required' });
+      this.setState({ error: t('postForm.messageRequired') });
       return;
     }
     this.setState({ submitting: true, error: null });
@@ -29,29 +36,35 @@ class ForumPostForm extends Component {
       }).unwrap();
       this.setState({ bodyHtml: '', submitting: false });
     } catch (err) {
-      this.setState({ error: err.message || 'Failed to post', submitting: false });
+      this.setState({
+        error: err.message || t('postForm.postFailed'),
+        submitting: false,
+      });
     }
   };
 
   render() {
+    const { t, i18n } = this.props;
     const { bodyHtml, error, submitting } = this.state;
     return (
       <Box component="form" onSubmit={this.handleSubmit} sx={{ mt: 2 }}>
         <Typography variant="h6" gutterBottom>
-          Reply
+          {t('postForm.reply')}
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box sx={{ mb: 2, bgcolor: 'background.paper' }}>
           <ReactQuill
+            key={i18n.language}
             theme="snow"
             value={bodyHtml}
             onChange={(value) => this.setState({ bodyHtml: value })}
-            modules={quillModules}
+            modules={getQuillModules()}
             formats={quillFormats}
+            placeholder={getQuillPlaceholder()}
           />
         </Box>
         <Button type="submit" variant="contained" disabled={submitting}>
-          {submitting ? 'Posting…' : 'Post reply'}
+          {submitting ? t('postForm.posting') : t('postForm.submit')}
         </Button>
       </Box>
     );
@@ -60,4 +73,4 @@ class ForumPostForm extends Component {
 
 const mapDispatchToProps = { createPost };
 
-export default connect(null, mapDispatchToProps)(ForumPostForm);
+export default withTranslation()(connect(null, mapDispatchToProps)(ForumPostForm));

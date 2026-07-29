@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import StarIcon from '@mui/icons-material/Star';
@@ -39,17 +40,22 @@ class ForumStarButton extends Component {
   };
 
   render() {
-    const { user, starredByMe, starCount } = this.props;
+    const { user, starredByMe, starCount, t } = this.props;
+    const label = user
+      ? starredByMe
+        ? t('star.unstar')
+        : t('star.star')
+      : t('star.signInToStar');
     return (
-      <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-        <Tooltip title={user ? (starredByMe ? 'Unstar' : 'Star') : 'Sign in to star'}>
+      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+        <Tooltip title={label}>
           <span>
             <IconButton
               size="small"
               onClick={this.handleToggle}
               disabled={!user}
               color={starredByMe ? 'secondary' : 'default'}
-              aria-label={user ? (starredByMe ? 'Unstar' : 'Star') : 'Sign in to star'}
+              aria-label={label}
             >
               {starredByMe ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
             </IconButton>
@@ -74,4 +80,4 @@ const mapDispatchToProps = {
   applyStarOnPost,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(ForumStarButton);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(ForumStarButton));

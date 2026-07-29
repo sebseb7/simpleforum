@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -7,6 +8,7 @@ import Stack from '@mui/material/Stack';
 
 class SiteFooter extends Component {
   render() {
+    const { t } = this.props;
     return (
       <Box
         component="footer"
@@ -31,7 +33,7 @@ class SiteFooter extends Component {
               color="text.secondary"
               variant="body2"
             >
-              Privacy Policy
+              {t('footer.privacy')}
             </Link>
           </Stack>
         </Container>
@@ -40,4 +42,4 @@ class SiteFooter extends Component {
   }
 }
 
-export default SiteFooter;
+export default withTranslation()(SiteFooter);

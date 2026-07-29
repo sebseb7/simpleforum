@@ -1,10 +1,21 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api.js';
 
-export const fetchSections = createAsyncThunk('sections/fetchAll', async () => {
-  const { sections } = await api.getSections();
-  return sections;
-});
+function normalizeListMode(mode) {
+  if (!mode) return { lang: 'en' };
+  if (mode.all) return { all: true };
+  const lang = String(mode.lang || 'en').toLowerCase().slice(0, 2);
+  return { lang: lang === 'de' ? 'de' : 'en' };
+}
+
+export const fetchSections = createAsyncThunk(
+  'sections/fetchAll',
+  async (mode, { getState }) => {
+    const listMode = normalizeListMode(mode ?? getState().sections.listMode);
+    const { sections } = await api.getSections(listMode);
+    return { sections, listMode };
+  },
+);
 
 export const createSection = createAsyncThunk(
   'sections/create',
@@ -26,6 +37,7 @@ const sectionsSlice = createSlice({
   name: 'sections',
   initialState: {
     items: [],
+    listMode: { lang: 'en' },
     status: 'idle',
     error: null,
   },
@@ -37,20 +49,34 @@ const sectionsSlice = createSlice({
       })
       .addCase(fetchSections.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.items = action.payload;
+        state.items = action.payload.sections;
+        state.listMode = action.payload.listMode;
       })
       .addCase(fetchSections.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
       })
       .addCase(createSection.fulfilled, (state, action) => {
-        state.items.push(action.payload);
+        const section = action.payload;
+        const mode = state.listMode;
+        const matches =
+          mode.all || !mode.lang || section.lang === mode.lang;
+        if (!matches) return;
+        state.items.push(section);
         state.items.sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
       })
       .addCase(updateSection.fulfilled, (state, action) => {
-        const idx = state.items.findIndex((s) => s.id === action.payload.id);
-        if (idx >= 0) state.items[idx] = action.payload;
-        else state.items.push(action.payload);
+        const section = action.payload;
+        const mode = state.listMode;
+        const matches =
+          mode.all || !mode.lang || section.lang === mode.lang;
+        const idx = state.items.findIndex((s) => s.id === section.id);
+        if (!matches) {
+          if (idx >= 0) state.items.splice(idx, 1);
+          return;
+        }
+        if (idx >= 0) state.items[idx] = section;
+        else state.items.push(section);
         state.items.sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
       });
   },

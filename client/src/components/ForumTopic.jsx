@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -20,11 +21,17 @@ import {
   deleteTopic,
   clearDeletedNavigate,
 } from '../store/topicsSlice.js';
+import { formatForumDate } from '../i18n/formatDate.js';
 import ForumTopicMessage from './ForumTopicMessage.jsx';
 import ForumPostForm from './ForumPostForm.jsx';
 import ForumStarButton from './ForumStarButton.jsx';
 import ProtectedAction from './ProtectedAction.jsx';
-import { ReactQuill, quillModules, quillFormats } from '../quillSetup.js';
+import {
+  ReactQuill,
+  getQuillModules,
+  getQuillPlaceholder,
+  quillFormats,
+} from '../quillSetup.js';
 
 class ForumTopic extends Component {
   state = {
@@ -57,13 +64,13 @@ class ForumTopic extends Component {
   };
 
   handleClose = () => {
-    if (window.confirm('Close this topic? No new replies will be allowed.')) {
+    if (window.confirm(this.props.t('topic.closeConfirm'))) {
       this.props.closeTopic(Number(this.props.params.topicId));
     }
   };
 
   handleDelete = () => {
-    if (window.confirm('Delete this topic and all posts? This cannot be undone.')) {
+    if (window.confirm(this.props.t('topic.deleteConfirm'))) {
       this.props.deleteTopic(Number(this.props.params.topicId));
     }
   };
@@ -83,9 +90,10 @@ class ForumTopic extends Component {
   };
 
   saveEdit = async () => {
+    const { t } = this.props;
     const { editTitle, editBodyHtml } = this.state;
     if (!editTitle.trim()) {
-      this.setState({ editError: 'Title is required' });
+      this.setState({ editError: t('topic.titleRequired') });
       return;
     }
     this.setState({ saving: true, editError: null });
@@ -100,14 +108,14 @@ class ForumTopic extends Component {
       this.setState({ editing: false, saving: false });
     } catch (err) {
       this.setState({
-        editError: err.message || 'Failed to update topic',
+        editError: err.message || t('topic.updateFailed'),
         saving: false,
       });
     }
   };
 
   render() {
-    const { topic, posts, error, user, params } = this.props;
+    const { topic, posts, error, user, params, t, i18n } = this.props;
     const { editing, editTitle, editBodyHtml, editError, saving } = this.state;
     const topicId = Number(params.topicId);
     const ready = topic?.id === topicId;
@@ -119,7 +127,7 @@ class ForumTopic extends Component {
         {ready && (
           <Breadcrumbs sx={{ mb: 2 }}>
             <Link component={RouterLink} to="/" underline="hover" color="inherit">
-              Forums
+              {t('nav.forums')}
             </Link>
             <Link
               component={RouterLink}
@@ -149,7 +157,7 @@ class ForumTopic extends Component {
                 {editing ? (
                   <TextField
                     fullWidth
-                    label="Title"
+                    label={t('topic.title')}
                     value={editTitle}
                     onChange={(e) => this.setState({ editTitle: e.target.value })}
                     sx={{ mb: 1 }}
@@ -157,7 +165,7 @@ class ForumTopic extends Component {
                 ) : (
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
                     <Typography variant="h4">{topic.title}</Typography>
-                    {topic.isClosed && <Chip label="Closed" size="small" />}
+                    {topic.isClosed && <Chip label={t('topic.closed')} size="small" />}
                   </Stack>
                 )}
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -165,7 +173,10 @@ class ForumTopic extends Component {
                     {topic.authorName?.[0]}
                   </Avatar>
                   <Typography variant="body2" color="text.secondary">
-                    {topic.authorName} · {topic.createdAt}
+                    {t('topic.authorMeta', {
+                      name: topic.authorName,
+                      date: formatForumDate(topic.createdAt),
+                    })}
                   </Typography>
                 </Stack>
               </Box>
@@ -178,17 +189,17 @@ class ForumTopic extends Component {
                 />
                 {isAuthor && !editing && (
                   <Button size="small" variant="outlined" onClick={this.startEdit}>
-                    Edit
+                    {t('topic.edit')}
                   </Button>
                 )}
                 {canClose && !topic.isClosed && !editing && (
                   <Button size="small" variant="outlined" onClick={this.handleClose}>
-                    Close topic
+                    {t('topic.closeTopic')}
                   </Button>
                 )}
                 {isAuthor && !editing && (
                   <Button size="small" color="error" variant="outlined" onClick={this.handleDelete}>
-                    Delete
+                    {t('topic.delete')}
                   </Button>
                 )}
               </Stack>
@@ -204,19 +215,21 @@ class ForumTopic extends Component {
               <Box sx={{ mb: 3 }}>
                 <Box sx={{ mb: 2, bgcolor: 'background.paper' }}>
                   <ReactQuill
+                    key={i18n.language}
                     theme="snow"
                     value={editBodyHtml}
                     onChange={(value) => this.setState({ editBodyHtml: value })}
-                    modules={quillModules}
+                    modules={getQuillModules()}
                     formats={quillFormats}
+                    placeholder={getQuillPlaceholder()}
                   />
                 </Box>
                 <Stack direction="row" spacing={1}>
                   <Button variant="contained" onClick={this.saveEdit} disabled={saving}>
-                    {saving ? 'Saving…' : 'Save'}
+                    {saving ? t('topic.saving') : t('topic.save')}
                   </Button>
                   <Button onClick={this.cancelEdit} disabled={saving}>
-                    Cancel
+                    {t('topic.cancel')}
                   </Button>
                 </Stack>
               </Box>
@@ -237,10 +250,10 @@ class ForumTopic extends Component {
 
             {topic.isClosed ? (
               <Alert severity="info" sx={{ mt: 2 }}>
-                This topic is closed.
+                {t('topic.isClosed')}
               </Alert>
             ) : (
-              <ProtectedAction user={user}>
+              <ProtectedAction user={user} message={t('topic.signInToParticipate')}>
                 <ForumPostForm topicId={topic.id} />
               </ProtectedAction>
             )}
@@ -278,4 +291,6 @@ const mapDispatchToProps = {
   clearDeletedNavigate,
 };
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(ForumTopic));
+export default withRouter(
+  withTranslation()(connect(mapStateToProps, mapDispatchToProps)(ForumTopic)),
+);

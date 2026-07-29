@@ -1,0 +1,166 @@
+{
+  "dateLocale": "de",
+  "quill": {
+    "placeholder": "Schreiben Sie Ihre Nachricht…",
+    "resize": {
+      "altTip": "Alt gedrückt halten, um das Seitenverhältnis zu sperren",
+      "floatLeft": "links",
+      "floatRight": "rechts",
+      "center": "zentriert",
+      "restore": "zurücksetzen",
+      "inputTip": "Enter drücken zum Übernehmen"
+    }
+  },
+  "brand": "QuixPOS Forum",
+  "nav": {
+    "forums": "Foren",
+    "starred": "Stern",
+    "admin": "Admin",
+    "openNav": "Navigation öffnen",
+    "signIn": "Anmelden",
+    "signInHint": "Mit Google anmelden.",
+    "language": "Sprache",
+    "langEn": "EN",
+    "langDe": "DE"
+  },
+  "account": {
+    "menu": "Kontomenü",
+    "logOut": "Abmelden",
+    "settings": "Einstellungen",
+    "displayName": "Anzeigename",
+    "saveDisplayName": "Anzeigename speichern",
+    "hideAvatar": "Avatar ausblenden",
+    "deleteAccount": "Konto löschen",
+    "deleteAccountBody": "Löscht dauerhaft Ihr Profil, Themen, Beiträge und Sterne. Tippen Sie {{name}} zur Bestätigung.",
+    "confirmDisplayName": "Anzeigename bestätigen",
+    "deleteMyAccount": "Mein Konto löschen",
+    "deleting": "Wird gelöscht…",
+    "nameRequired": "Anzeigename ist erforderlich",
+    "updateAvatarFailed": "Avatar-Sichtbarkeit konnte nicht aktualisiert werden",
+    "updateNameFailed": "Anzeigename konnte nicht aktualisiert werden",
+    "confirmNameMismatch": "Tippen Sie Ihren genauen Anzeigenamen zur Bestätigung.",
+    "deleteFailed": "Konto konnte nicht gelöscht werden"
+  },
+  "home": {
+    "welcome": "Willkommen",
+    "blurb": "Durchsuchen Sie alle Bereiche und Themen ohne Anmeldung. Melden Sie sich oben an, um eine Debatte zu starten oder daran teilzunehmen.",
+    "adminTopics": "Admin-Themen",
+    "topicCount_one": "{{count}} Thema",
+    "topicCount_other": "{{count}} Themen",
+    "noSections": "Noch keine Bereiche. Ein Admin kann sie unter Admin anlegen."
+  },
+  "section": {
+    "adminCreatesTopics": "Admin erstellt Themen",
+    "closed": "Geschlossen",
+    "topicMeta": "von {{name}} · {{count}} Antworten · aktualisiert {{date}}",
+    "noTopics": "Noch keine Themen.",
+    "signInToStart": "Melden Sie sich an, um ein Thema zu starten."
+  },
+  "topic": {
+    "closed": "Geschlossen",
+    "authorMeta": "{{name}} · {{date}}",
+    "edit": "Bearbeiten",
+    "closeTopic": "Thema schließen",
+    "delete": "Löschen",
+    "title": "Titel",
+    "save": "Speichern",
+    "saving": "Speichern…",
+    "cancel": "Abbrechen",
+    "closeConfirm": "Dieses Thema schließen? Neue Antworten sind dann nicht mehr möglich.",
+    "deleteConfirm": "Dieses Thema und alle Beiträge löschen? Das kann nicht rückgängig gemacht werden.",
+    "titleRequired": "Titel ist erforderlich",
+    "updateFailed": "Thema konnte nicht aktualisiert werden",
+    "isClosed": "Dieses Thema ist geschlossen.",
+    "signInToParticipate": "Melden Sie sich an, um teilzunehmen."
+  },
+  "post": {
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "saving": "Speichern…",
+    "cancel": "Abbrechen",
+    "messageRequired": "Nachricht ist erforderlich",
+    "updateFailed": "Beitrag konnte nicht aktualisiert werden",
+    "deleteConfirm": "Diesen Beitrag löschen?"
+  },
+  "topicForm": {
+    "start": "Thema starten",
+    "title": "Titel",
+    "create": "Thema erstellen",
+    "posting": "Wird gesendet…",
+    "titleRequired": "Titel ist erforderlich",
+    "createFailed": "Thema konnte nicht erstellt werden"
+  },
+  "postForm": {
+    "reply": "Antworten",
+    "submit": "Antwort senden",
+    "posting": "Wird gesendet…",
+    "messageRequired": "Nachricht ist erforderlich",
+    "postFailed": "Antwort konnte nicht gesendet werden"
+  },
+  "star": {
+    "star": "Stern",
+    "unstar": "Stern entfernen",
+    "signInToStar": "Anmelden für Stern"
+  },
+  "starred": {
+    "title": "Stern",
+    "topics": "Themen",
+    "posts": "Beiträge",
+    "signIn": "Melden Sie sich an, um Ihre Themen und Beiträge mit Stern zu sehen.",
+    "topicMeta": "von {{name}} · {{count}} Sterne",
+    "postBy": "Beitrag von {{name}}",
+    "postMeta": "{{count}} Sterne · {{date}}",
+    "noTopics": "Keine Themen mit Stern.",
+    "noPosts": "Keine Beiträge mit Stern."
+  },
+  "admin": {
+    "signIn": "Melden Sie sich an, um Bereiche zu verwalten.",
+    "accessRequired": "Admin-Zugriff erforderlich.",
+    "title": "Bereiche verwalten",
+    "blurb": "Forenbereiche je Sprache anlegen. Die Startseite listet nur Bereiche der aktiven Sprache; Direktlinks funktionieren weiterhin für alle. Markieren Sie einen Bereich als Admin-only, wenn nur Admins neue Themen öffnen dürfen (jeder kann weiterhin antworten).",
+    "fieldTitle": "Titel",
+    "fieldDescription": "Beschreibung",
+    "fieldLanguage": "Sprache",
+    "langEn": "Englisch",
+    "langDe": "Deutsch",
+    "fieldSortOrder": "Sortierung",
+    "adminOnlyTopics": "Nur Admins können Themen erstellen",
+    "create": "Bereich erstellen",
+    "update": "Bereich aktualisieren",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "titleRequired": "Titel erforderlich",
+    "saveFailed": "Speichern fehlgeschlagen",
+    "adminTopicsSuffix": " (Admin-Themen)"
+  },
+  "footer": {
+    "privacy": "Datenschutz"
+  },
+  "login": {
+    "missingClientId": "VITE_GOOGLE_CLIENT_ID setzen, um die Anmeldung zu aktivieren"
+  },
+  "privacy": {
+    "title": "Datenschutzerklärung",
+    "intro": "QuixPOS öffentliches Diskussionsforum. Diese Seite erklärt, welche Informationen wir verarbeiten, wenn Sie browsen oder sich anmelden.",
+    "publicTitle": "Öffentliche Inhalte",
+    "publicBody": "Bereiche, Themen und Beiträge sind öffentlich. Jeder kann sie ohne Konto lesen, auch über direkte Links. Posten Sie keine personenbezogenen Daten, Geheimnisse oder etwas, das Sie nicht öffentlich teilen möchten. Mit Stern markierte Einträge sind an Ihr Konto gebunden und nur für Sie sichtbar, wenn Sie angemeldet sind; die zugrunde liegenden Themen und Beiträge bleiben öffentlich.",
+    "googleTitle": "Google-Anmeldung",
+    "googleBody1": "Die einzige Anmeldemöglichkeit ist Google Sign-In (Google Identity / OAuth). Wir bieten keine Passwörter, Magic Links oder andere Login-Methoden. Bei der Anmeldung teilt Google uns ein verifiziertes Identitätstoken für Ihr Google-Konto. Wir nutzen dieses Token ausschließlich zur Authentifizierung und zum Erstellen oder Aktualisieren Ihres Forum-Profils.",
+    "googleBody2Before": "Von Google erhalten wir begrenzte Profilinformationen, typischerweise Ihre Google-Konto-ID, E-Mail-Adresse, Anzeigename und Profilbild-URL. Wir erhalten nicht Ihr Google-Passwort. Googles eigene Praxis ist beschrieben in der",
+    "googlePrivacyLink": "Google-Datenschutzerklärung",
+    "googleBody2After": ".",
+    "storeTitle": "Was wir speichern",
+    "storeIntro": "Auf unseren Servern speichern wir:",
+    "storeItem1": "Ihre Google-Konto-Subject-ID, E-Mail, Name und Bild-URL",
+    "storeItem2": "Themen und Beiträge, die Sie erstellen (nur aktueller Titel und Text; Bearbeitungen ersetzen den vorherigen Text)",
+    "storeItem3": "Welche Themen und Beiträge Sie mit einem Stern markiert haben",
+    "storeItem4": "Ein Sitzungstoken nach der Google-Anmeldung, das auf Ihrem Gerät gespeichert wird, damit Sie angemeldet bleiben",
+    "cookiesTitle": "Cookies",
+    "cookiesBody": "Nach der Google-Anmeldung speichern wir ein Token auf Ihrem Gerät. Dieses Token identifiziert Ihre Sitzung gegenüber unserer API. Das Löschen der Website-Daten oder Abmelden entfernt es. Wir verwenden keine Cookies von Drittanbietern für Werbung.",
+    "retentionTitle": "Aufbewahrung und Ihre Wahlmöglichkeiten",
+    "retentionBody": "Öffentliche Beiträge bleiben, bis Sie sie löschen (oder bis der Themenautor das gesamte Thema löscht). Sie können Ihre eigenen Themen und Beiträge bearbeiten oder löschen, solange Sie angemeldet sind. Sie können sich jederzeit abmelden. Sie können Ihr Konto dauerhaft über das Menü neben Ihrem Namen löschen; dabei werden Ihr Profil sowie Ihre Themen, Beiträge und Sterne entfernt.",
+    "contactTitle": "Kontakt",
+    "contactBody": "Fragen zu dieser Erklärung oder zu Ihren Daten:"
+  }
+}
