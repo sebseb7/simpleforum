@@ -1,4 +1,6 @@
 -- name: findByLang
+-- api: GET /settings ; GET /sections (resolveWelcomeTopic) ; SSG loadPageData (/)
+-- params: lang
 SELECT
   r.lang, r.title, r.body_html, r.author_id, r.updated_at,
   u.name AS author_name,
@@ -9,6 +11,8 @@ LEFT JOIN users u ON u.id = r.author_id
 WHERE r.lang = ?;
 
 -- name: list
+-- api: (unused helper)
+-- params: (none)
 SELECT
   r.lang, r.title, r.body_html, r.author_id, r.updated_at,
   u.name AS author_name,
@@ -19,6 +23,8 @@ LEFT JOIN users u ON u.id = r.author_id
 ORDER BY r.lang ASC;
 
 -- name: upsert
+-- api: PATCH /settings
+-- params: lang, title, body_html, author_id
 INSERT INTO root_topics (lang, title, body_html, author_id, updated_at)
 VALUES (?, ?, ?, ?, datetime('now'))
 ON CONFLICT(lang) DO UPDATE SET

@@ -12,13 +12,22 @@ const sqlDir = path.resolve(__dirname, '../sql');
 /** Log named SQL statements slower than this (ms). */
 const SLOW_SQL_MS = Number(process.env.SLOW_SQL_MS) || 2;
 
+/** Drop full-line `-- …` comments (docs under `-- name:`); keep SQL only. */
+function stripLineComments(sql) {
+  return sql
+    .split('\n')
+    .filter((line) => !/^\s*--/.test(line))
+    .join('\n')
+    .trim();
+}
+
 function parseNamedQueries(filePath) {
   const raw = fs.readFileSync(filePath, 'utf8');
   const parts = raw.split(/--\s*name:\s*(\w+)/);
   const queries = {};
   for (let i = 1; i < parts.length; i += 2) {
     const name = parts[i];
-    const sql = parts[i + 1].trim();
+    const sql = stripLineComments(parts[i + 1] || '');
     if (name && sql) queries[name] = sql;
   }
   return queries;
