@@ -1,0 +1,13 @@
+/* quill-resize-image overlays #editor-resizer on .ql-container */
+.ql-container {
+  position: relative;
+}
+
+#editor-resizer {
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+.ql-editor img {
+  cursor: pointer;
+}

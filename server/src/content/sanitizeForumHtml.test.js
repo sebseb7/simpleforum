@@ -87,4 +87,15 @@ describe('sanitizeForumHtml', () => {
     assert.match(html, /rel="noopener noreferrer"/);
     assert.match(html, /src="https:\/\/cdn.example.com\/x.webp"/);
   });
+
+  it('keeps quill-resize width and float styles', () => {
+    const { html } = sanitizeForumHtml(
+      '<p><img src="https://cdn.example.com/x.webp" width="240" style="width:50%;float:left;display:block;margin:auto;"></p>',
+      { required: true },
+    );
+    assert.match(html, /width="240"/);
+    assert.match(html, /width:50%/i);
+    assert.match(html, /float:left/i);
+    assert.match(html, /margin:\s*auto/i);
+  });
 });

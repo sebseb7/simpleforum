@@ -1,8 +1,10 @@
 import ReactQuill, { Quill } from 'react-quill-new';
 import QuillResizeImage from 'quill-resize-image';
 import 'react-quill-new/dist/quill.snow.css';
+import './quillResize.css';
 import i18n from './i18n/index.js';
 import { createImageHandler } from './content/quillImageHandler.js';
+import './content/quillResizableImage.js';
 
 Quill.register('modules/resize', QuillResizeImage);
 
@@ -30,16 +32,26 @@ const toolbar = [
   ['clean'],
 ];
 
+/** Stable modules objects so react-quill-new does not regenerate the editor every render. */
+const modulesByReject = new WeakMap();
+
 /**
  * Quill modules with resize labels from the active language file.
  * @param {{ onImageReject?: (code: string) => void }} [options]
  */
 export function getQuillModules(options = {}) {
-  return {
+  const onImageReject = options.onImageReject;
+  const lang = i18n.language;
+  if (onImageReject) {
+    const cached = modulesByReject.get(onImageReject);
+    if (cached?.lang === lang) return cached.modules;
+  }
+
+  const modules = {
     toolbar: {
       container: toolbar,
       handlers: {
-        image: createImageHandler(options.onImageReject),
+        image: createImageHandler(onImageReject),
       },
     },
     resize: {
@@ -53,6 +65,11 @@ export function getQuillModules(options = {}) {
       },
     },
   };
+
+  if (onImageReject) {
+    modulesByReject.set(onImageReject, { lang, modules });
+  }
+  return modules;
 }
 
 /** @deprecated Prefer getQuillModules() so locale updates apply. */

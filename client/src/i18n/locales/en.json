@@ -111,7 +111,7 @@
       "html_sanitized": "Disallowed markup was removed",
       "link_protocol_stripped": "An unsafe link was removed",
       "image_removed": "An image was removed",
-      "image_too_large": "An image was too large and was removed (max 120 KB each)",
+      "image_too_large": "An image was too large and was removed (max {{maxKb}} KB each)",
       "image_type_not_allowed": "Only PNG, JPEG, GIF, or WebP images are allowed",
       "too_many_images": "Extra images were removed (max 3 per message)",
       "image_read_failed": "Could not read that image file"

@@ -5,13 +5,20 @@ import { ContentValidationError } from './errors.js';
 const DIRTY_PROBE =
   /<script\b|<\/script|on[a-z]+\s*=|javascript:|vbscript:|data:text\/html|<iframe\b|<object\b|<embed\b|<svg\b|<link\b|<meta\b|<style\b|expression\s*\(/i;
 
+const LENGTH_OR_AUTO = /^(?:auto|\d+(?:\.\d+)?(?:px|%)?)$/i;
+const MARGIN_SHORTHAND =
+  /^(?:auto|\d+(?:\.\d+)?(?:px|%)?)(?:\s+(?:auto|\d+(?:\.\d+)?(?:px|%)?)){0,3}$/i;
+
 const ALLOWED_IMG_STYLE = {
   width: [/^\d+(?:\.\d+)?(?:px|%)?$/i],
   height: [/^\d+(?:\.\d+)?(?:px|%)?$/i],
   float: [/^(?:left|right|none)$/i],
   display: [/^(?:block|inline|inline-block)$/i],
-  'margin-left': [/^\d+(?:\.\d+)?(?:px|%)?$/i],
-  'margin-right': [/^\d+(?:\.\d+)?(?:px|%)?$/i],
+  margin: [MARGIN_SHORTHAND],
+  'margin-top': [LENGTH_OR_AUTO],
+  'margin-right': [LENGTH_OR_AUTO],
+  'margin-bottom': [LENGTH_OR_AUTO],
+  'margin-left': [LENGTH_OR_AUTO],
   'max-width': [/^\d+(?:\.\d+)?(?:px|%)?$/i],
 };
 

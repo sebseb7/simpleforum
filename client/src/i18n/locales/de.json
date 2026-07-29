@@ -111,7 +111,7 @@
       "html_sanitized": "Unzulässiges Markup wurde entfernt",
       "link_protocol_stripped": "Ein unsicherer Link wurde entfernt",
       "image_removed": "Ein Bild wurde entfernt",
-      "image_too_large": "Ein Bild war zu groß und wurde entfernt (max. 120 KB je Bild)",
+      "image_too_large": "Ein Bild war zu groß und wurde entfernt (max. {{maxKb}} KB je Bild)",
       "image_type_not_allowed": "Nur PNG-, JPEG-, GIF- oder WebP-Bilder sind erlaubt",
       "too_many_images": "Zusätzliche Bilder wurden entfernt (max. 3 pro Nachricht)",
       "image_read_failed": "Die Bilddatei konnte nicht gelesen werden"

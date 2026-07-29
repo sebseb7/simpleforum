@@ -8,9 +8,11 @@ export const CONTENT_LIMITS = {
   /** Max plain-text characters after stripping tags. */
   bodyTextMax: 20_000,
   maxImages: 3,
-  /** Decoded image byte size (per data: URL). */
+  /** Decoded image byte size (per data: URL) after client recompression. */
   maxImageBytes: 120_000,
   /** Sum of decoded data: image bytes in one body. */
   maxTotalImageBytes: 300_000,
+  /** Max original file size the client will attempt to recompress. */
+  maxImageSourceBytes: 12_000_000,
   allowedImageMimes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
 };
