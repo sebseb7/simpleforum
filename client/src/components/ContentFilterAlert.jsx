@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -6,10 +6,17 @@ import Box from '@mui/material/Box';
 import { CONTENT_LIMITS } from '@shared/contentLimits.js';
 
 /**
- * Shows warnings returned by the server contentFilter after save.
+ * User-facing warning after save. Technical detail goes to console only.
  */
 export default function ContentFilterAlert({ contentFilter, onClose, sx }) {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!contentFilter?.changed || !contentFilter.warnings?.length) return;
+    // eslint-disable-next-line no-console
+    console.warn('[content-filter]', contentFilter);
+  }, [contentFilter]);
+
   if (!contentFilter?.changed || !contentFilter.warnings?.length) return null;
 
   const items = contentFilter.warnings.map((w, i) => {

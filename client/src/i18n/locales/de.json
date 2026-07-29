@@ -11,7 +11,7 @@
       "inputTip": "Enter drücken zum Übernehmen"
     }
   },
-  "brand": "QuixPOS Forum",
+  "brand": "",
   "nav": {
     "forums": "Foren",
     "starred": "Stern",
@@ -47,11 +47,17 @@
     "adminTopics": "Admin-Themen",
     "topicCount_one": "{{count}} Thema",
     "topicCount_other": "{{count}} Themen",
-    "noSections": "Noch keine Bereiche. Ein Admin kann sie unter Admin anlegen."
+    "noSections": "Noch keine Bereiche. Ein Admin kann sie unter Admin anlegen.",
+    "pinnedTopics": "Angepinnt",
+    "topStarred": "Am meisten markiert",
+    "openTopic": "Zum Thema",
+    "replyCount_one": "{{count}} Antwort",
+    "replyCount_other": "{{count}} Antworten"
   },
   "section": {
     "adminCreatesTopics": "Admin erstellt Themen",
     "closed": "Geschlossen",
+    "pinned": "Angepinnt",
     "topicMeta": "von {{name}} · {{count}} Antworten · aktualisiert {{date}}",
     "noTopics": "Noch keine Themen.",
     "signInToStart": "Melden Sie sich an, um ein Thema zu starten."
@@ -61,6 +67,9 @@
   },
   "topic": {
     "closed": "Geschlossen",
+    "pinned": "Angepinnt",
+    "pin": "Anpinnen",
+    "unpin": "Loslösen",
     "authorMeta": "{{name}} · {{date}}",
     "edit": "Bearbeiten",
     "closeTopic": "Thema schließen",
@@ -148,6 +157,15 @@
     "accessRequired": "Admin-Zugriff erforderlich.",
     "title": "Bereiche verwalten",
     "blurb": "Forenbereiche je Sprache anlegen. Die Startseite listet nur Bereiche der aktiven Sprache; Direktlinks funktionieren weiterhin für alle. Markieren Sie einen Bereich als Admin-only, wenn nur Admins neue Themen öffnen dürfen (jeder kann weiterhin antworten).",
+    "welcomeTitle": "Startseiten-Inhalt",
+    "siteName": "Site-Name",
+    "rootDe": "Deutsch",
+    "rootEn": "Englisch",
+    "saveSettings": "Einstellungen speichern",
+    "settingsSaving": "Speichern…",
+    "settingsSaved": "Einstellungen gespeichert",
+    "settingsSaveFailed": "Einstellungen konnten nicht gespeichert werden",
+    "sectionsTitle": "Bereiche",
     "fieldTitle": "Titel",
     "fieldDescription": "Beschreibung",
     "fieldLanguage": "Sprache",

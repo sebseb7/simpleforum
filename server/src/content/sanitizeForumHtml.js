@@ -1,9 +1,27 @@
 import sanitizeHtml from 'sanitize-html';
 import { CONTENT_LIMITS } from '../../../shared/contentLimits.js';
 import { ContentValidationError } from './errors.js';
+import { createLogger } from '../logger.js';
 
-const DIRTY_PROBE =
-  /<script\b|<\/script|on[a-z]+\s*=|javascript:|vbscript:|data:text\/html|<iframe\b|<object\b|<embed\b|<svg\b|<link\b|<meta\b|<style\b|expression\s*\(/i;
+const log = createLogger('content-filter');
+
+// Named probes so warnings can say exactly what triggered them.
+const DIRTY_PROBES = [
+  { id: 'script', re: /<script\b|<\/script\b/i },
+  { id: 'iframe', re: /<iframe\b/i },
+  { id: 'object', re: /<object\b/i },
+  { id: 'embed', re: /<embed\b/i },
+  { id: 'svg', re: /<svg\b/i },
+  { id: 'link_tag', re: /<link\b/i },
+  { id: 'meta', re: /<meta\b/i },
+  { id: 'style_tag', re: /<style\b/i },
+  { id: 'javascript_url', re: /javascript:/i },
+  { id: 'vbscript_url', re: /vbscript:/i },
+  { id: 'data_html', re: /data:text\/html/i },
+  { id: 'css_expression', re: /expression\s*\(/i },
+  // Event handlers only inside tags (not prose like "content=" / "once =").
+  { id: 'event_handler', re: /<[^>]*\s+on[a-z]+\s*=/i },
+];
 
 const LENGTH_OR_AUTO = /^(?:auto|\d+(?:\.\d+)?(?:px|%)?)$/i;
 const MARGIN_SHORTHAND =
@@ -90,9 +108,80 @@ function plainTextFromHtml(html) {
     .trim();
 }
 
+function snippetAround(html, index, radius = 48) {
+  const start = Math.max(0, index - radius);
+  const end = Math.min(html.length, index + radius);
+  let snip = html.slice(start, end).replace(/\s+/g, ' ');
+  if (start > 0) snip = `…${snip}`;
+  if (end < html.length) snip = `${snip}…`;
+  return snip;
+}
+
+function findDirtyHits(input) {
+  const hits = [];
+  for (const probe of DIRTY_PROBES) {
+    const m = probe.re.exec(input);
+    if (!m) continue;
+    hits.push({
+      id: probe.id,
+      match: m[0].slice(0, 80),
+      snippet: snippetAround(input, m.index),
+    });
+  }
+  return hits;
+}
+
+function summarizeHtmlDiff(before, after) {
+  const forCompare = (s) =>
+    String(s || '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&#160;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const a = forCompare(before);
+  const b = forCompare(after);
+  if (a === b) return null;
+  const countTags = (html) => {
+    const counts = Object.create(null);
+    let m;
+    const re = /<\/?([a-z0-9]+)(\s[^>]*)?>/gi;
+    while ((m = re.exec(html))) {
+      const name = m[1].toLowerCase();
+      counts[name] = (counts[name] || 0) + 1;
+    }
+    return counts;
+  };
+  const beforeTags = countTags(before);
+  const afterTags = countTags(after);
+  const removedTags = [];
+  const addedTags = [];
+  for (const name of new Set([...Object.keys(beforeTags), ...Object.keys(afterTags)])) {
+    const d = (afterTags[name] || 0) - (beforeTags[name] || 0);
+    if (d < 0) removedTags.push(`${name}×${-d}`);
+    if (d > 0) addedTags.push(`${name}×${d}`);
+  }
+  return {
+    bytesIn: Buffer.byteLength(before, 'utf8'),
+    bytesOut: Buffer.byteLength(after, 'utf8'),
+    removedTags,
+    addedTags,
+    beforeSnippet: a.slice(0, 160) + (a.length > 160 ? '…' : ''),
+    afterSnippet: b.slice(0, 160) + (b.length > 160 ? '…' : ''),
+  };
+}
+
+function warningKey(w) {
+  return `${w.code}::${typeof w.detail === 'string' ? w.detail : JSON.stringify(w.detail || '')}`;
+}
+
 function pushWarning(warnings, code, detail) {
-  if (warnings.some((w) => w.code === code && w.detail === detail)) return;
-  warnings.push(detail ? { code, detail } : { code });
+  const entry = detail ? { code, detail } : { code };
+  if (warnings.some((w) => warningKey(w) === warningKey(entry))) return;
+  warnings.push(entry);
 }
 
 /**
@@ -111,8 +200,13 @@ export function sanitizeForumHtml(raw, { required = false } = {}) {
   }
 
   const warnings = [];
-  if (DIRTY_PROBE.test(input)) {
-    pushWarning(warnings, 'html_sanitized');
+  const dirtyHits = findDirtyHits(input);
+  for (const hit of dirtyHits) {
+    pushWarning(warnings, 'html_sanitized', {
+      reason: hit.id,
+      match: hit.match,
+      snippet: hit.snippet,
+    });
   }
 
   let imagesKept = 0;
@@ -173,7 +267,9 @@ export function sanitizeForumHtml(raw, { required = false } = {}) {
       a: (_tagName, attribs) => {
         const href = attribs.href || '';
         if (!isAllowedHref(href)) {
-          pushWarning(warnings, 'link_protocol_stripped');
+          pushWarning(warnings, 'link_protocol_stripped', {
+            href: String(href).slice(0, 120),
+          });
           return { tagName: 'span', attribs: {} };
         }
         return {
@@ -189,7 +285,9 @@ export function sanitizeForumHtml(raw, { required = false } = {}) {
         const check = isAllowedImageSrc(attribs.src);
         if (!check.ok) {
           imagesRemoved += 1;
-          pushWarning(warnings, check.code);
+          pushWarning(warnings, check.code, {
+            src: String(attribs.src || '').slice(0, 80),
+          });
           return { tagName: '', text: '' };
         }
         if (imagesKept >= CONTENT_LIMITS.maxImages) {
@@ -219,9 +317,6 @@ export function sanitizeForumHtml(raw, { required = false } = {}) {
     },
   });
 
-  // Hard-reject if over image count before soft-removal left a confusing result:
-  // soft-remove is fine; only hard-reject raw oversize already handled.
-
   const text = plainTextFromHtml(cleaned);
   if (text.length > CONTENT_LIMITS.bodyTextMax) {
     throw new ContentValidationError('body_text_too_long', {
@@ -238,26 +333,40 @@ export function sanitizeForumHtml(raw, { required = false } = {}) {
     );
   }
 
-  // Catch remaining structural strips (disallowed tags) without dirty probe.
-  if (!warnings.length && cleaned.replace(/\s+/g, '') !== input.replace(/\s+/g, '')) {
-    // Only flag when tags/attrs clearly differ in a meaningful way (length drop).
-    if (cleaned.length < input.length * 0.98 || /<\s*(script|iframe|svg|style)\b/i.test(input)) {
-      pushWarning(warnings, 'html_sanitized');
-    }
+  const diff = summarizeHtmlDiff(input, cleaned);
+  // Only warn on real structural strips (disallowed tags), not Quill &nbsp; / whitespace
+  // normalization — those used to fire a scary "markup removed" for harmless text.
+  if (
+    diff &&
+    !warnings.some((w) => w.code === 'html_sanitized') &&
+    diff.removedTags.length > 0
+  ) {
+    pushWarning(warnings, 'html_sanitized', {
+      reason: 'structural_diff',
+      ...diff,
+    });
   }
 
   const bytesOut = Buffer.byteLength(cleaned, 'utf8');
-  return {
-    html: cleaned,
-    contentFilter: {
-      changed: warnings.length > 0,
-      warnings,
-      stats: {
-        bytesIn,
-        bytesOut,
-        imagesKept,
-        imagesRemoved,
-      },
+  const contentFilter = {
+    changed: warnings.length > 0,
+    warnings,
+    stats: {
+      bytesIn,
+      bytesOut,
+      imagesKept,
+      imagesRemoved,
     },
   };
+
+  if (contentFilter.changed) {
+    log.warn('sanitize changed content', {
+      warnings,
+      stats: contentFilter.stats,
+      dirtyHits,
+      diff,
+    });
+  }
+
+  return { html: cleaned, contentFilter };
 }

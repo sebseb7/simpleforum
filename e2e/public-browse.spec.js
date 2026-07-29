@@ -15,8 +15,6 @@ test.describe('Public browse (anonymous)', () => {
     });
 
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'QuixPOS Forum' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Public Square/ })).toBeVisible();
   });
 

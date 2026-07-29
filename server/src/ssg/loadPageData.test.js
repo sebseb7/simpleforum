@@ -29,7 +29,8 @@ describe('SSG loadPageData', () => {
     assert.equal(preloadedState.sections.status, 'succeeded');
     assert.equal(preloadedState.sections.listMode.lang, 'de');
     assert.ok(preloadedState.sections.items.every((s) => s.lang === 'de'));
-    assert.match(meta.title, /QuixPOS/);
+    assert.equal(typeof meta.siteName, 'string');
+    assert.equal(typeof meta.title, 'string');
   });
 
   it('loads a section page', () => {

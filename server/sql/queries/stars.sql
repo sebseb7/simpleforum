@@ -13,7 +13,7 @@ SELECT id FROM stars WHERE user_id = ? AND target_type = ? AND target_id = ?;
 
 -- name: listMineTopics
 SELECT
-  t.id, t.section_id, t.title, t.slug, t.body_html, t.author_id, t.is_closed, t.created_at, t.updated_at,
+  t.id, t.section_id, t.title, t.slug, t.body_html, t.author_id, t.is_closed, t.is_pinned, t.created_at, t.updated_at,
   u.name AS author_name,
   (SELECT COUNT(*) FROM posts p WHERE p.topic_id = t.id) AS post_count,
   (SELECT COUNT(*) FROM stars s2 WHERE s2.target_type = 'topic' AND s2.target_id = t.id) AS star_count,

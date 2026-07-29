@@ -17,6 +17,7 @@ import withRouter from '../withRouter.jsx';
 import {
   fetchTopic,
   closeTopic,
+  pinTopic,
   updateTopic,
   deleteTopic,
   clearDeletedNavigate,
@@ -101,6 +102,11 @@ class ForumTopic extends Component {
     if (window.confirm(this.props.t('topic.closeConfirm'))) {
       this.props.closeTopic(this.props.topic.id);
     }
+  };
+
+  handlePin = () => {
+    const { topic, pinTopic } = this.props;
+    pinTopic({ topicId: topic.id, pinned: !topic.isPinned });
   };
 
   handleDelete = () => {
@@ -247,6 +253,7 @@ class ForumTopic extends Component {
                 ) : (
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
                     <Typography component="h1" variant="h4">{topic.title}</Typography>
+                    {topic.isPinned && <Chip label={t('topic.pinned')} size="small" color="primary" variant="outlined" />}
                     {topic.isClosed && <Chip label={t('topic.closed')} size="small" />}
                   </Stack>
                 )}
@@ -277,6 +284,11 @@ class ForumTopic extends Component {
                 {canClose && !topic.isClosed && !editing && (
                   <Button size="small" variant="outlined" onClick={this.handleClose}>
                     {t('topic.closeTopic')}
+                  </Button>
+                )}
+                {user?.isAdmin && !editing && (
+                  <Button size="small" variant="outlined" onClick={this.handlePin}>
+                    {topic.isPinned ? t('topic.unpin') : t('topic.pin')}
                   </Button>
                 )}
                 {isAuthor && !editing && (
@@ -399,6 +411,7 @@ const mapStateToProps = (state, ownProps) => {
 const mapDispatchToProps = {
   fetchTopic,
   closeTopic,
+  pinTopic,
   updateTopic,
   deleteTopic,
   clearDeletedNavigate,

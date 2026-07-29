@@ -1,5 +1,5 @@
-import { mapSection, mapTopic } from '../api/sections.js';
-import { mapPost } from '../api/topics.js';
+import { mapSection, mapTopic, mapPost, mapSectionWithHighlights } from '../api/sections.js';
+import { resolveWelcomeTopic, getSiteName } from '../api/settings.js';
 import { SSG_LANG } from '../../../shared/ssgLang.js';
 import de from '../../../client/src/i18n/locales/de.json' with { type: 'json' };
 import {
@@ -13,9 +13,6 @@ import {
   jsonLdSection,
   jsonLdTopic,
 } from './jsonLd.js';
-
-const DEFAULT_DOCUMENT_TITLE = 'QuixPOS - Community Discussions';
-const DEFAULT_DESCRIPTION = de.home.blurb;
 
 const TOPICS_PAGE_SIZE = 20;
 const POSTS_PAGE_SIZE = 50;
@@ -36,13 +33,38 @@ function emptyStars() {
   };
 }
 
-function baseState(overrides) {
+function siteLabel(store) {
+  return getSiteName(store);
+}
+
+function docTitle(pageTitle, siteName) {
+  const site = String(siteName || '').trim();
+  const page = String(pageTitle || '').trim();
+  if (page && site && page !== site) return `${page} · ${site}`;
+  return page || site;
+}
+
+function plainFromWelcome(welcomeTopic) {
+  if (!welcomeTopic) return '';
+  return (
+    buildTopicDescription(welcomeTopic.bodyHtml || '', []) ||
+    String(welcomeTopic.title || '').trim()
+  );
+}
+
+function baseState(store, overrides) {
+  const siteName = getSiteName(store);
   return {
     auth: anonymousAuth,
     sections: {
       items: [],
+      welcomeTopic: null,
+      siteName,
+      rootDe: null,
+      rootEn: null,
       listMode: { lang: SSG_LANG },
       status: 'idle',
+      settingsStatus: 'idle',
       error: null,
     },
     topics: {
@@ -68,18 +90,15 @@ function baseState(overrides) {
   };
 }
 
-function docTitle(title) {
-  return title ? `${title} · QuixPOS` : DEFAULT_DOCUMENT_TITLE;
-}
-
-function baseMeta(partial = {}) {
+function baseMeta(store, partial = {}) {
+  const siteName = siteLabel(store);
   return {
-    title: DEFAULT_DOCUMENT_TITLE,
-    description: DEFAULT_DESCRIPTION,
+    title: siteName,
+    description: siteName,
     type: 'website',
     image: '',
     url: '',
-    siteName: 'QuixPOS Forum',
+    siteName,
     ...partial,
   };
 }
@@ -90,20 +109,31 @@ function baseMeta(partial = {}) {
  */
 export function loadPageData(store, urlPath) {
   const path = String(urlPath || '/').split('?')[0] || '/';
+  const siteName = siteLabel(store);
 
   if (path === '/' || path === '') {
-    const sections = store.sections.listByLang.all(SSG_LANG).map(mapSection);
-    const meta = baseMeta({
-      title: DEFAULT_DOCUMENT_TITLE,
-      description: DEFAULT_DESCRIPTION,
+    const sections = store.sections.listByLang
+      .all(SSG_LANG)
+      .map((row) => mapSectionWithHighlights(store, row));
+    const welcomeTopic = resolveWelcomeTopic(store, SSG_LANG, { forAnonymous: true });
+    const description = plainFromWelcome(welcomeTopic);
+    const title = docTitle(welcomeTopic?.title, siteName);
+    const meta = baseMeta(store, {
+      title,
+      description,
       url: canonicalUrl('/'),
     });
     return {
-      preloadedState: baseState({
+      preloadedState: baseState(store, {
         sections: {
           items: sections,
+          welcomeTopic,
+          siteName: getSiteName(store),
+          rootDe: null,
+          rootEn: null,
           listMode: { lang: SSG_LANG },
           status: 'succeeded',
+          settingsStatus: 'idle',
           error: null,
         },
       }),
@@ -113,16 +143,16 @@ export function loadPageData(store, urlPath) {
   }
 
   if (path === '/privacy') {
-    const meta = baseMeta({
-      title: docTitle(de.privacy.title),
-      description: String(de.privacy.intro || DEFAULT_DESCRIPTION)
+    const meta = baseMeta(store, {
+      title: docTitle(de.privacy.title, siteName),
+      description: String(de.privacy.intro || '')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 300),
       url: canonicalUrl('/privacy'),
     });
     return {
-      preloadedState: baseState({}),
+      preloadedState: baseState(store, {}),
       meta,
       jsonLd: jsonLdPrivacy({ meta }),
     };
@@ -134,8 +164,8 @@ export function loadPageData(store, urlPath) {
     const sectionRow = store.sections.findBySlug.get(slug);
     if (!sectionRow) {
       return {
-        preloadedState: baseState({}),
-        meta: baseMeta({ url: canonicalUrl(path) }),
+        preloadedState: baseState(store, {}),
+        meta: baseMeta(store, { url: canonicalUrl(path) }),
         notFound: true,
       };
     }
@@ -146,16 +176,14 @@ export function loadPageData(store, urlPath) {
       TOPICS_PAGE_SIZE,
       0,
     );
-    // Section list UI only needs titles/meta — omit bodies so SSG HTML stays
-    // small and we don't AVIF-encode images that are never shown here.
     const topics = topicRows.map((row) => {
       const topic = mapTopic(row, null, { forAnonymous: true });
       return { ...topic, bodyHtml: '' };
     });
 
-    const meta = baseMeta({
-      title: docTitle(section.title),
-      description: (section.description || DEFAULT_DESCRIPTION)
+    const meta = baseMeta(store, {
+      title: docTitle(section.title, siteName),
+      description: (section.description || '')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 300),
@@ -163,7 +191,7 @@ export function loadPageData(store, urlPath) {
     });
 
     return {
-      preloadedState: baseState({
+      preloadedState: baseState(store, {
         topics: {
           section,
           list: topics,
@@ -188,8 +216,8 @@ export function loadPageData(store, urlPath) {
     const topicRow = store.topics.findBySlug.get(slug);
     if (!topicRow) {
       return {
-        preloadedState: baseState({}),
-        meta: baseMeta({ url: canonicalUrl(path) }),
+        preloadedState: baseState(store, {}),
+        meta: baseMeta(store, { url: canonicalUrl(path) }),
         notFound: true,
       };
     }
@@ -204,10 +232,10 @@ export function loadPageData(store, urlPath) {
       buildTopicDescription(
         topicRow.body_html,
         postRows.map((r) => r.body_html),
-      ) || DEFAULT_DESCRIPTION;
+      ) || '';
     const imageSource = buildTopicOgImageSource(topicRow, postRows);
-    const meta = baseMeta({
-      title: docTitle(topic.title),
+    const meta = baseMeta(store, {
+      title: docTitle(topic.title, siteName),
       description,
       type: 'article',
       url: canonicalUrl(`/topic/${topic.slug}`),
@@ -215,7 +243,7 @@ export function loadPageData(store, urlPath) {
     });
 
     return {
-      preloadedState: baseState({
+      preloadedState: baseState(store, {
         topics: {
           section: null,
           list: [],
@@ -248,8 +276,8 @@ export function loadPageData(store, urlPath) {
   }
 
   return {
-    preloadedState: baseState({}),
-    meta: baseMeta({ url: canonicalUrl(path) }),
+    preloadedState: baseState(store, {}),
+    meta: baseMeta(store, { url: canonicalUrl(path) }),
   };
 }
 

@@ -56,7 +56,7 @@ function injectHtml(template, { appHtml, emotionCssHref, preloadedState, meta, l
   const ogType = escapeHtml(meta.type || 'website');
   const ogUrl = escapeHtml(meta.url || '');
   const ogImage = escapeHtml(meta.image || '');
-  const siteName = escapeHtml(meta.siteName || 'QuixPOS Forum');
+  const siteName = escapeHtml(meta.siteName || '');
   const twitterCard = ogImage ? 'summary_large_image' : 'summary';
 
   html = html.replace(/<html\b[^>]*>/i, `<html lang="${escapeHtml(htmlLang)}">`);
@@ -90,20 +90,13 @@ function injectHtml(template, { appHtml, emotionCssHref, preloadedState, meta, l
     metaTags.push(jsonLdScriptTag(jsonLd));
   }
 
-  // Drop SPA placeholder meta that vite's index.html ships with.
-  html = html.replace(
-    /<meta\s+name="description"\s+content="QuixPOS community forum[^"]*"\s*\/>/i,
-    '',
-  );
-  html = html.replace(
-    /<meta\s+property="og:title"\s+content="QuixPOS - Community Discussions"\s*\/>/i,
-    '',
-  );
-  html = html.replace(
-    /<meta\s+property="og:description"\s+content="QuixPOS community forum[^"]*"\s*\/>/i,
-    '',
-  );
-  html = html.replace(/<meta\s+property="og:type"\s+content="website"\s*\/>/i, '');
+  // Drop SPA placeholder meta from the Vite client template.
+  html = html.replace(/<meta\s+name="description"[^>]*\/?>/gi, '');
+  html = html.replace(/<meta\s+property="og:title"[^>]*\/?>/gi, '');
+  html = html.replace(/<meta\s+property="og:description"[^>]*\/?>/gi, '');
+  html = html.replace(/<meta\s+property="og:type"[^>]*\/?>/gi, '');
+  html = html.replace(/<meta\s+property="og:site_name"[^>]*\/?>/gi, '');
+  html = html.replace(/<meta\s+name="twitter:[^"]+"[^>]*\/?>/gi, '');
 
   const metaBlock = metaTags.join('\n    ');
 

@@ -58,6 +58,7 @@ export default function createStarsRouter(store) {
       authorId: row.author_id,
       authorName: row.author_name,
       isClosed: !!row.is_closed,
+      isPinned: !!row.is_pinned,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       postCount: row.post_count,

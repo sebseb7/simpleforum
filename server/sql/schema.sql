@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS topics (
   body_html TEXT NOT NULL DEFAULT '',
   author_id INTEGER NOT NULL REFERENCES users(id),
   is_closed INTEGER NOT NULL DEFAULT 0,
+  is_pinned INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -50,6 +51,19 @@ CREATE TABLE IF NOT EXISTS stars (
   target_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (user_id, target_type, target_id)
+);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS root_topics (
+  lang TEXT PRIMARY KEY CHECK (lang IN ('en', 'de')),
+  title TEXT NOT NULL DEFAULT '',
+  body_html TEXT NOT NULL DEFAULT '',
+  author_id INTEGER REFERENCES users(id),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_topics_section ON topics(section_id);

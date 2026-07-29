@@ -38,6 +38,14 @@ export const closeTopic = createAsyncThunk('topics/close', async (topicId) => {
   return topic;
 });
 
+export const pinTopic = createAsyncThunk(
+  'topics/pin',
+  async ({ topicId, pinned }) => {
+    const { topic } = await api.pinTopic(topicId, pinned);
+    return topic;
+  },
+);
+
 export const updateTopic = createAsyncThunk(
   'topics/update',
   async ({ topicId, title, bodyHtml }) => {
@@ -71,6 +79,17 @@ const topicsSlice = createSlice({
       if (state.current?.id === topicId) state.current.isClosed = true;
       const item = state.list.find((t) => t.id === topicId);
       if (item) item.isClosed = true;
+    },
+    applyTopicPinned(state, action) {
+      const { topicId, isPinned } = action.payload;
+      if (state.current?.id === topicId) state.current.isPinned = !!isPinned;
+      const item = state.list.find((t) => t.id === topicId);
+      if (item) item.isPinned = !!isPinned;
+      // Keep pinned topics at the top of the current section list.
+      state.list = [...state.list].sort((a, b) => {
+        if (!!b.isPinned !== !!a.isPinned) return b.isPinned ? 1 : -1;
+        return 0;
+      });
     },
     applyTopicUpdated(state, action) {
       const topic = action.payload;
@@ -157,6 +176,18 @@ const topicsSlice = createSlice({
         const item = state.list.find((t) => t.id === action.payload.id);
         if (item) item.isClosed = true;
       })
+      .addCase(pinTopic.fulfilled, (state, action) => {
+        const topic = action.payload;
+        if (state.current?.id === topic.id) {
+          state.current = { ...state.current, ...topic };
+        }
+        const idx = state.list.findIndex((t) => t.id === topic.id);
+        if (idx >= 0) state.list[idx] = { ...state.list[idx], ...topic };
+        state.list = [...state.list].sort((a, b) => {
+          if (!!b.isPinned !== !!a.isPinned) return b.isPinned ? 1 : -1;
+          return 0;
+        });
+      })
       .addCase(updateTopic.fulfilled, (state, action) => {
         const topic = action.payload.topic;
         state.current = topic;
@@ -181,6 +212,7 @@ const topicsSlice = createSlice({
 
 export const {
   applyTopicClosed,
+  applyTopicPinned,
   applyTopicUpdated,
   applyTopicDeleted,
   clearDeletedNavigate,

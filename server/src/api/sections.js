@@ -7,8 +7,10 @@ import { ContentValidationError, sendContentError } from '../content/errors.js';
 import { redactAnonymousHtml } from '../../../shared/redactAnonymousHtml.js';
 import { shouldRedactAnonymousMedia } from '../content/anonymousMedia.js';
 import { uniqueSlug } from '../../../shared/slugify.js';
+import { resolveWelcomeTopic, getSiteName } from './settings.js';
 
 const SUPPORTED_SECTION_LANGS = new Set(['en', 'de']);
+const HOME_TOP_STARRED = 3;
 
 function normalizeLang(value, fallback = 'en') {
   const lang = String(value || fallback).toLowerCase().slice(0, 2);
@@ -48,12 +50,63 @@ function mapTopic(row, starredIds = null, { forAnonymous = false } = {}) {
     authorName: row.author_name,
     authorPicture: row.author_picture || null,
     isClosed: !!row.is_closed,
+    isPinned: !!row.is_pinned,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     postCount: row.post_count ?? 0,
     starCount: row.star_count ?? 0,
     starredByMe: starredIds ? starredIds.has(row.id) : false,
   };
+}
+
+function mapPost(row, starredIds = null, { forAnonymous = false } = {}) {
+  if (!row) return null;
+  const bodyHtml = shouldRedactAnonymousMedia(row, !forAnonymous)
+    ? redactAnonymousHtml(row.body_html)
+    : row.body_html;
+  return {
+    id: row.id,
+    topicId: row.topic_id,
+    bodyHtml,
+    authorId: row.author_id,
+    authorName: row.author_name,
+    authorPicture: row.author_picture || null,
+    createdAt: row.created_at,
+    starCount: row.star_count ?? 0,
+    starredByMe: starredIds ? starredIds.has(row.id) : false,
+  };
+}
+
+/** Lightweight topic cards for homepage “most starred” (no body). */
+function mapTopicHighlight(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    isClosed: !!row.is_closed,
+    isPinned: !!row.is_pinned,
+    starCount: row.star_count ?? 0,
+    authorName: row.author_name,
+  };
+}
+
+function sectionHighlights(store, sectionId, { forAnonymous = true } = {}) {
+  // Pinned: full topic body for homepage embed; reply count only (no reply bodies).
+  const pinned = store.topics.listPinnedBySection
+    .all(sectionId)
+    .map((row) => mapTopic(row, null, { forAnonymous }))
+    .filter(Boolean);
+  const topStarred = store.topics.listTopStarredBySection
+    .all(sectionId, HOME_TOP_STARRED)
+    .map(mapTopicHighlight);
+  return { pinned, topStarred };
+}
+
+function mapSectionWithHighlights(store, row, opts = {}) {
+  const section = mapSection(row);
+  if (!section) return null;
+  return { ...section, highlights: sectionHighlights(store, section.id, opts) };
 }
 
 /** Resolve section by slug (preferred) or numeric id. */
@@ -78,12 +131,28 @@ function allocateTopicSlug(store, title, excludeId = 0) {
 export default function createSectionsRouter(store) {
   const router = Router();
 
-  router.get('/sections', (req, res) => {
+  router.get('/sections', optionalAuth, (req, res) => {
     const all = req.query.all === '1' || req.query.all === 'true';
     const rows = all
       ? store.sections.list.all()
       : store.sections.listByLang.all(normalizeLang(req.query.lang));
-    res.json({ sections: rows.map(mapSection) });
+    // Home (lang filter) includes full pinned topic bodies + top-starred cards.
+    // Admin "all" list stays lean without highlights.
+    const forAnonymous = !req.user;
+    const lang = normalizeLang(req.query.lang);
+    const sections = all
+      ? rows.map(mapSection)
+      : rows.map((row) =>
+          mapSectionWithHighlights(store, row, { forAnonymous }),
+        );
+    if (all) {
+      return res.json({ sections, siteName: getSiteName(store) });
+    }
+    return res.json({
+      sections,
+      siteName: getSiteName(store),
+      welcomeTopic: resolveWelcomeTopic(store, lang, { forAnonymous }),
+    });
   });
 
   router.post('/sections', requireAuth, requireAdmin, (req, res) => {
@@ -229,4 +298,12 @@ export default function createSectionsRouter(store) {
   return router;
 }
 
-export { mapTopic, mapSection, findSection, allocateTopicSlug, allocateSectionSlug };
+export {
+  mapTopic,
+  mapPost,
+  mapSection,
+  mapSectionWithHighlights,
+  findSection,
+  allocateTopicSlug,
+  allocateSectionSlug,
+};

@@ -20,17 +20,26 @@ function enabled() {
   return true;
 }
 
-function runBuild() {
+/**
+ * Content mutations only need HTML prerender — not a full Vite client/SSR rebuild.
+ * Requires an existing dist-ssr/entry-server.js + client-template.html from a prior
+ * `npm run build` / `build:client` + `build:ssr`.
+ */
+function runSsg() {
   running = true;
   dirty = false;
-  log.info('starting npm run build…');
+  log.info('starting npm run ssg…');
 
   // Vite/picocolors/chalk disable color when stdout is not a TTY (pm2 pipes).
-  // Force ANSI so rebuild logs stay colored like an interactive terminal.
-  const env = { ...process.env, SSG_REBUILD: '0', FORCE_COLOR: '3', CLICOLOR_FORCE: '1' };
+  const env = {
+    ...process.env,
+    SSG_REBUILD: '0', // prevent nested rebuild triggers from broadcast→ssg side effects
+    FORCE_COLOR: '3',
+    CLICOLOR_FORCE: '1',
+  };
   delete env.NO_COLOR;
 
-  const child = spawn('npm', ['run', 'build'], {
+  const child = spawn('npm', ['run', 'ssg'], {
     cwd: ROOT,
     env,
     stdio: 'inherit',
@@ -38,7 +47,7 @@ function runBuild() {
   });
 
   child.on('error', (err) => {
-    log.error('build spawn failed', err);
+    log.error('ssg spawn failed', err);
     running = false;
     if (dirty) scheduleRebuild();
   });
@@ -46,17 +55,17 @@ function runBuild() {
   child.on('exit', (code) => {
     running = false;
     if (code === 0) {
-      log.info('build finished');
+      log.info('ssg finished');
     } else {
-      log.error(`build exited with code ${code}`);
+      log.error(`ssg exited with code ${code}`);
     }
     if (dirty) scheduleRebuild();
   });
 }
 
 /**
- * Debounced full `npm run build` after content mutations.
- * Coalesces bursts; runs at most one build at a time; re-runs if dirty.
+ * Debounced `npm run ssg` after content mutations.
+ * Coalesces bursts; runs at most one pass at a time; re-runs if dirty.
  */
 export function scheduleRebuild() {
   if (!enabled()) return;
@@ -68,7 +77,7 @@ export function scheduleRebuild() {
       dirty = true;
       return;
     }
-    runBuild();
+    runSsg();
   }, DEBOUNCE_MS);
 }
 
@@ -80,10 +89,12 @@ const REBUILD_TYPES = new Set([
   'topic.updated',
   'topic.deleted',
   'topic.closed',
+  'topic.pinned',
   'post.created',
   'post.updated',
   'post.deleted',
   'star.changed',
+  'settings.updated',
   'account.deleted',
   'user.updated',
 ]);

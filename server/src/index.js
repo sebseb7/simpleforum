@@ -17,6 +17,7 @@ import createPostsRouter from './api/posts.js';
 import createStarsRouter from './api/stars.js';
 import createEventsRouter from './api/events.js';
 import createLinkPreviewRouter from './api/linkPreview.js';
+import createSettingsRouter from './api/settings.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('api');
@@ -77,6 +78,7 @@ app.use('/api', createSectionsRouter(store));
 app.use('/api', createTopicsRouter(store));
 app.use('/api', createPostsRouter(store));
 app.use('/api', createStarsRouter(store));
+app.use('/api', createSettingsRouter(store));
 app.use('/api', createEventsRouter());
 app.use('/api', createLinkPreviewRouter());
 

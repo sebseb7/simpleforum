@@ -11,7 +11,7 @@
       "inputTip": "Press Enter to apply"
     }
   },
-  "brand": "QuixPOS Forum",
+  "brand": "",
   "nav": {
     "forums": "Forums",
     "starred": "Starred",
@@ -47,11 +47,17 @@
     "adminTopics": "Admin topics",
     "topicCount_one": "{{count}} topic",
     "topicCount_other": "{{count}} topics",
-    "noSections": "No sections yet. An admin can create them under Admin."
+    "noSections": "No sections yet. An admin can create them under Admin.",
+    "pinnedTopics": "Pinned",
+    "topStarred": "Most starred",
+    "openTopic": "Open topic",
+    "replyCount_one": "{{count}} reply",
+    "replyCount_other": "{{count}} replies"
   },
   "section": {
     "adminCreatesTopics": "Admin creates topics",
     "closed": "Closed",
+    "pinned": "Pinned",
     "topicMeta": "by {{name}} · {{count}} replies · updated {{date}}",
     "noTopics": "No topics yet.",
     "signInToStart": "Sign in to start a topic."
@@ -61,6 +67,9 @@
   },
   "topic": {
     "closed": "Closed",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
     "authorMeta": "{{name}} · {{date}}",
     "edit": "Edit",
     "closeTopic": "Close topic",
@@ -148,6 +157,15 @@
     "accessRequired": "Admin access required.",
     "title": "Manage sections",
     "blurb": "Create forum sections per language. The home page only lists sections for the active language; direct links still work for every section. Mark a section admin-only if only admins may open new topics (everyone can still reply).",
+    "welcomeTitle": "Homepage content",
+    "siteName": "Site name",
+    "rootDe": "German",
+    "rootEn": "English",
+    "saveSettings": "Save settings",
+    "settingsSaving": "Saving…",
+    "settingsSaved": "Settings saved",
+    "settingsSaveFailed": "Could not save settings",
+    "sectionsTitle": "Sections",
     "fieldTitle": "Title",
     "fieldDescription": "Description",
     "fieldLanguage": "Language",

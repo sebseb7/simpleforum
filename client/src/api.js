@@ -91,6 +91,14 @@ const api = {
     return request(`/sections${q}`);
   },
 
+  getSettings() {
+    return request('/settings');
+  },
+
+  updateSettings(payload) {
+    return request('/settings', { method: 'PATCH', body: payload });
+  },
+
   createSection(payload) {
     return request('/sections', { method: 'POST', body: payload });
   },
@@ -124,6 +132,13 @@ const api = {
 
   closeTopic(topicId) {
     return request(`/topics/${topicId}/close`, { method: 'PATCH' });
+  },
+
+  pinTopic(topicId, pinned) {
+    return request(`/topics/${topicId}/pin`, {
+      method: 'PATCH',
+      body: { pinned },
+    });
   },
 
   updateTopic(topicId, payload) {

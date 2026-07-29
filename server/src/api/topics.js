@@ -1,30 +1,10 @@
 import { Router } from 'express';
-import { requireAuth, optionalAuth } from '../auth.js';
+import { requireAuth, requireAdmin, optionalAuth } from '../auth.js';
 import { broadcast } from '../sse.js';
-import { mapTopic, allocateTopicSlug } from './sections.js';
+import { mapTopic, mapPost, allocateTopicSlug } from './sections.js';
 import { parseWindow, windowMeta } from '../pagination.js';
 import { validateTopicInput } from '../content/validate.js';
 import { ContentValidationError, sendContentError } from '../content/errors.js';
-import { redactAnonymousHtml } from '../../../shared/redactAnonymousHtml.js';
-import { shouldRedactAnonymousMedia } from '../content/anonymousMedia.js';
-
-function mapPost(row, starredIds = null, { forAnonymous = false } = {}) {
-  if (!row) return null;
-  const bodyHtml = shouldRedactAnonymousMedia(row, !forAnonymous)
-    ? redactAnonymousHtml(row.body_html)
-    : row.body_html;
-  return {
-    id: row.id,
-    topicId: row.topic_id,
-    bodyHtml,
-    authorId: row.author_id,
-    authorName: row.author_name,
-    authorPicture: row.author_picture || null,
-    createdAt: row.created_at,
-    starCount: row.star_count ?? 0,
-    starredByMe: starredIds ? starredIds.has(row.id) : false,
-  };
-}
 
 /** Resolve topic by slug (preferred) or numeric id. */
 function findTopic(store, key) {
@@ -87,6 +67,27 @@ export default function createTopicsRouter(store) {
     broadcast({
       type: 'topic.closed',
       payload: { topicId: id, sectionId: topic.sectionId },
+    });
+    return res.json({ topic });
+  });
+
+  router.patch('/topics/:id/pin', requireAuth, requireAdmin, (req, res) => {
+    const id = Number(req.params.id);
+    const topicRow = store.topics.findById.get(id);
+    if (!topicRow) {
+      return res.status(404).json({ error: 'Topic not found' });
+    }
+    const pinned =
+      req.body?.pinned === undefined ? !topicRow.is_pinned : !!req.body.pinned;
+    store.topics.setPinned.run(pinned ? 1 : 0, id);
+    const topic = mapTopic(store.topics.findById.get(id));
+    broadcast({
+      type: 'topic.pinned',
+      payload: {
+        topicId: id,
+        sectionId: topic.sectionId,
+        isPinned: topic.isPinned,
+      },
     });
     return res.json({ topic });
   });
@@ -154,5 +155,3 @@ export default function createTopicsRouter(store) {
 
   return router;
 }
-
-export { mapPost };

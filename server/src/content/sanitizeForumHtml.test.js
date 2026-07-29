@@ -23,6 +23,25 @@ describe('sanitizeForumHtml', () => {
     assert.equal(contentFilter.changed, false);
   });
 
+  it('does not flag Quill &nbsp; whitespace normalization', () => {
+    const { contentFilter } = sanitizeForumHtml(
+      '<p>Willkommen&nbsp;im&nbsp;QuixPOS&nbsp;Forum</p>',
+      { required: true },
+    );
+    assert.equal(contentFilter.changed, false);
+  });
+
+  it('does not flag normal prose that contains on…= substrings', () => {
+    for (const raw of [
+      '<p>I only want a few words</p>',
+      '<p>once = twice</p>',
+      '<p>content=value in a sentence</p>',
+    ]) {
+      const { contentFilter } = sanitizeForumHtml(raw, { required: true });
+      assert.equal(contentFilter.changed, false, raw);
+    }
+  });
+
   it('strips script and reports warning', () => {
     const { html, contentFilter } = sanitizeForumHtml(
       '<p>ok</p><script>alert(1)</script>',

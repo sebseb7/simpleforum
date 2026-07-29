@@ -6,6 +6,7 @@ import {
   fetchTopic,
   applyTopicClosed,
   applyTopicDeleted,
+  applyTopicPinned,
   applyStarOnTopic,
   TOPICS_PAGE_SIZE,
   POSTS_PAGE_SIZE,
@@ -184,6 +185,7 @@ function handleEvent(store, msg) {
   switch (type) {
     case 'section.created':
     case 'section.updated':
+    case 'settings.updated':
       store.dispatch(fetchSections());
       break;
 
@@ -196,6 +198,19 @@ function handleEvent(store, msg) {
 
     case 'topic.closed':
       store.dispatch(applyTopicClosed({ topicId: payload.topicId }));
+      if (state.topics.section?.id === payload.sectionId) {
+        refetchSectionTopics(store, payload.sectionId);
+      }
+      break;
+
+    case 'topic.pinned':
+      store.dispatch(
+        applyTopicPinned({
+          topicId: payload.topicId,
+          isPinned: payload.isPinned,
+        }),
+      );
+      store.dispatch(fetchSections());
       if (state.topics.section?.id === payload.sectionId) {
         refetchSectionTopics(store, payload.sectionId);
       }
@@ -274,6 +289,7 @@ function handleEvent(store, msg) {
             starCount: payload.starCount,
           }),
         );
+        store.dispatch(fetchSections());
       } else if (payload.targetType === 'post') {
         store.dispatch(
           applyStarOnPost({

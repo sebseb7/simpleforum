@@ -143,6 +143,9 @@ class ForumSection extends Component {
                           <Typography component="h2" variant="subtitle1" fontWeight={600}>
                             {topic.title}
                           </Typography>
+                          {topic.isPinned && (
+                            <Chip size="small" label={t('section.pinned')} color="primary" variant="outlined" />
+                          )}
                           {topic.isClosed && (
                             <Chip size="small" label={t('section.closed')} color="default" />
                           )}

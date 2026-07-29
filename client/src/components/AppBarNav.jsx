@@ -436,7 +436,7 @@ class AppBarNav extends Component {
               fontSize: { xs: '1.15rem', sm: '1.5rem' },
             }}
           >
-            {t('brand')}
+            {this.props.siteName || ''}
           </Typography>
 
           {accountSlot}
@@ -475,6 +475,7 @@ const mapStateToProps = (state) => ({
   user: state.auth.user,
   token: state.auth.token,
   authStatus: state.auth.status,
+  siteName: state.sections.siteName,
 });
 
 const mapDispatchToProps = { logout, deleteAccount, updateProfile };

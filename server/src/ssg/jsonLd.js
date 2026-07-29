@@ -1,7 +1,5 @@
 import { canonicalUrl, siteOrigin } from './pageMeta.js';
 
-const SITE_NAME = 'QuixPOS Forum';
-
 /**
  * SQLite `datetime('now')` / space-separated UTC → ISO-8601 with Z.
  * @param {string | null | undefined} value
@@ -37,11 +35,11 @@ function imageNode(url) {
   };
 }
 
-function websiteNode() {
+function websiteNode(siteName) {
   return {
     '@type': 'WebSite',
     '@id': `${siteOrigin()}/#website`,
-    name: SITE_NAME,
+    name: siteName || undefined,
     url: siteOrigin(),
     inLanguage: 'de',
   };
@@ -68,7 +66,7 @@ export function jsonLdHome({ meta, sections }) {
   return {
     '@context': 'https://schema.org',
     '@graph': [
-      websiteNode(),
+      websiteNode(meta.siteName),
       {
         '@type': 'CollectionPage',
         '@id': `${meta.url}#webpage`,
@@ -110,7 +108,7 @@ export function jsonLdSection({ meta, section, topics }) {
   return {
     '@context': 'https://schema.org',
     '@graph': [
-      websiteNode(),
+      websiteNode(meta.siteName),
       {
         '@type': 'CollectionPage',
         '@id': `${meta.url}#webpage`,
@@ -163,7 +161,7 @@ export function jsonLdTopic({ meta, topic }) {
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [websiteNode(), posting],
+    '@graph': [websiteNode(meta.siteName), posting],
   };
 }
 

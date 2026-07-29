@@ -14,8 +14,19 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Chip from '@mui/material/Chip';
-import { fetchSections, createSection, updateSection } from '../store/sectionsSlice.js';
+import Divider from '@mui/material/Divider';
+import {
+  fetchSections,
+  createSection,
+  updateSection,
+  fetchSettings,
+  updateSettings,
+} from '../store/sectionsSlice.js';
 import DocumentMeta from './DocumentMeta.jsx';
+import ForumQuillEditor from './ForumQuillEditor.jsx';
+import ContentFilterAlert from './ContentFilterAlert.jsx';
+import { CONTENT_LIMITS } from '../content/contentErrors.js';
+import { imageRejectMessage } from '../content/quillImageHandler.js';
 
 function uiLang(i18n) {
   return (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
@@ -30,12 +41,49 @@ class AdminSections extends Component {
     sortOrder: 0,
     editingId: null,
     error: null,
+    rootDeTitle: '',
+    rootDeBody: '',
+    rootEnTitle: '',
+    rootEnBody: '',
+    siteName: '',
+    settingsError: null,
+    settingsSaved: false,
+    settingsSaving: false,
+    contentFilter: null,
+    imageError: null,
   };
 
   componentDidMount() {
     this.setState({ lang: uiLang(this.props.i18n) });
     this.props.fetchSections({ all: true });
+    this.props.fetchSettings().then((action) => {
+      if (action.payload) this.applyRootPayload(action.payload);
+    });
   }
+
+  componentDidUpdate(prevProps) {
+    if (
+      prevProps.rootDe !== this.props.rootDe ||
+      prevProps.rootEn !== this.props.rootEn ||
+      prevProps.siteName !== this.props.siteName
+    ) {
+      this.applyRootPayload({
+        siteName: this.props.siteName,
+        rootDe: this.props.rootDe,
+        rootEn: this.props.rootEn,
+      });
+    }
+  }
+
+  applyRootPayload = (payload) => {
+    this.setState({
+      siteName: payload.siteName || '',
+      rootDeTitle: payload.rootDe?.title || '',
+      rootDeBody: payload.rootDe?.bodyHtml || '',
+      rootEnTitle: payload.rootEn?.title || '',
+      rootEnBody: payload.rootEn?.bodyHtml || '',
+    });
+  };
 
   resetForm = () => {
     this.setState({
@@ -94,9 +142,68 @@ class AdminSections extends Component {
     }
   };
 
+  handleSettingsSave = async (e) => {
+    e.preventDefault();
+    const { t } = this.props;
+    this.setState({
+      settingsSaving: true,
+      settingsError: null,
+      settingsSaved: false,
+      contentFilter: null,
+    });
+    try {
+      const result = await this.props
+        .updateSettings({
+          siteName: this.state.siteName,
+          rootDe: {
+            title: this.state.rootDeTitle,
+            bodyHtml: this.state.rootDeBody,
+          },
+          rootEn: {
+            title: this.state.rootEnTitle,
+            bodyHtml: this.state.rootEnBody,
+          },
+        })
+        .unwrap();
+      this.setState({
+        settingsSaving: false,
+        settingsSaved: true,
+        contentFilter: result.contentFilter?.changed ? result.contentFilter : null,
+      });
+      this.applyRootPayload(result);
+    } catch (err) {
+      this.setState({
+        settingsSaving: false,
+        settingsError: err.message || t('admin.settingsSaveFailed'),
+      });
+    }
+  };
+
+  handleImageReject = (code) => {
+    this.setState({ imageError: imageRejectMessage(code) });
+  };
+
   render() {
-    const { user, sections, t } = this.props;
-    const { title, description, lang, adminOnlyTopics, sortOrder, editingId, error } = this.state;
+    const { user, sections, t, i18n } = this.props;
+    const {
+      title,
+      description,
+      lang,
+      adminOnlyTopics,
+      sortOrder,
+      editingId,
+      error,
+      rootDeTitle,
+      rootDeBody,
+      rootEnTitle,
+      rootEnBody,
+      siteName,
+      settingsError,
+      settingsSaved,
+      settingsSaving,
+      contentFilter,
+      imageError,
+    } = this.state;
 
     if (!user) {
       return <Alert severity="info">{t('admin.signIn')}</Alert>;
@@ -115,8 +222,118 @@ class AdminSections extends Component {
           {t('admin.blurb')}
         </Typography>
 
+        <Typography component="h2" variant="h6" gutterBottom>
+          {t('admin.welcomeTitle')}
+        </Typography>
+        <Box component="form" onSubmit={this.handleSettingsSave} sx={{ mb: 4 }}>
+          {settingsError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {settingsError}
+            </Alert>
+          )}
+          {settingsSaved && (
+            <Alert
+              severity="success"
+              sx={{ mb: 2 }}
+              onClose={() => this.setState({ settingsSaved: false })}
+            >
+              {t('admin.settingsSaved')}
+            </Alert>
+          )}
+          {imageError && (
+            <Alert
+              severity="warning"
+              sx={{ mb: 2 }}
+              onClose={() => this.setState({ imageError: null })}
+            >
+              {imageError}
+            </Alert>
+          )}
+          <ContentFilterAlert
+            contentFilter={contentFilter}
+            onClose={() => this.setState({ contentFilter: null })}
+            sx={{ mb: 2 }}
+          />
+          <Stack spacing={3}>
+            <TextField
+              label={t('admin.siteName')}
+              value={siteName}
+              onChange={(e) =>
+                this.setState({ siteName: e.target.value, settingsSaved: false })
+              }
+              fullWidth
+              slotProps={{ htmlInput: { maxLength: CONTENT_LIMITS.titleMax } }}
+            />
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                {t('admin.rootDe')}
+              </Typography>
+              <TextField
+                label={t('admin.fieldTitle')}
+                value={rootDeTitle}
+                onChange={(e) =>
+                  this.setState({ rootDeTitle: e.target.value, settingsSaved: false })
+                }
+                fullWidth
+                sx={{ mb: 1 }}
+                slotProps={{ htmlInput: { maxLength: CONTENT_LIMITS.titleMax } }}
+              />
+              <Box sx={{ bgcolor: 'background.paper' }}>
+                <ForumQuillEditor
+                  key={`de-${i18n.language}`}
+                  value={rootDeBody}
+                  onChange={(value) =>
+                    this.setState({ rootDeBody: value, settingsSaved: false })
+                  }
+                  onImageReject={this.handleImageReject}
+                />
+              </Box>
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                {t('admin.rootEn')}
+              </Typography>
+              <TextField
+                label={t('admin.fieldTitle')}
+                value={rootEnTitle}
+                onChange={(e) =>
+                  this.setState({ rootEnTitle: e.target.value, settingsSaved: false })
+                }
+                fullWidth
+                sx={{ mb: 1 }}
+                slotProps={{ htmlInput: { maxLength: CONTENT_LIMITS.titleMax } }}
+              />
+              <Box sx={{ bgcolor: 'background.paper' }}>
+                <ForumQuillEditor
+                  key={`en-${i18n.language}`}
+                  value={rootEnBody}
+                  onChange={(value) =>
+                    this.setState({ rootEnBody: value, settingsSaved: false })
+                  }
+                  onImageReject={this.handleImageReject}
+                />
+              </Box>
+            </Box>
+            <Box>
+              <Button type="submit" variant="contained" disabled={settingsSaving}>
+                {settingsSaving ? t('admin.settingsSaving') : t('admin.saveSettings')}
+              </Button>
+            </Box>
+          </Stack>
+        </Box>
+
+        <Divider sx={{ mb: 4 }} />
+
+        <Typography component="h2" variant="h6" gutterBottom>
+          {t('admin.sectionsTitle')}
+        </Typography>
+
         <Box component="form" onSubmit={this.handleSubmit} sx={{ mb: 4 }}>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <Stack spacing={2}>
             <TextField
               label={t('admin.fieldTitle')}
@@ -215,8 +432,17 @@ class AdminSections extends Component {
 const mapStateToProps = (state) => ({
   user: state.auth.user,
   sections: state.sections.items,
+  siteName: state.sections.siteName,
+  rootDe: state.sections.rootDe,
+  rootEn: state.sections.rootEn,
 });
 
-const mapDispatchToProps = { fetchSections, createSection, updateSection };
+const mapDispatchToProps = {
+  fetchSections,
+  createSection,
+  updateSection,
+  fetchSettings,
+  updateSettings,
+};
 
 export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(AdminSections));

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth.js';
 import { broadcast } from '../sse.js';
-import { mapPost } from './topics.js';
+import { mapPost } from './sections.js';
 import { validatePostInput } from '../content/validate.js';
 import { ContentValidationError, sendContentError } from '../content/errors.js';
 

@@ -13,8 +13,24 @@ export const fetchSections = createAsyncThunk(
   'sections/fetchAll',
   async (mode, { getState }) => {
     const listMode = normalizeListMode(mode ?? getState().sections.listMode);
-    const { sections } = await api.getSections(listMode);
-    return { sections, listMode };
+    const data = await api.getSections(listMode);
+    return {
+      sections: data.sections,
+      welcomeTopic: listMode.all ? null : (data.welcomeTopic ?? null),
+      siteName: data.siteName ?? '',
+      listMode,
+    };
+  },
+);
+
+export const fetchSettings = createAsyncThunk('sections/fetchSettings', async () => {
+  return api.getSettings();
+});
+
+export const updateSettings = createAsyncThunk(
+  'sections/updateSettings',
+  async (payload) => {
+    return api.updateSettings(payload);
   },
 );
 
@@ -38,8 +54,13 @@ const sectionsSlice = createSlice({
   name: 'sections',
   initialState: {
     items: [],
+    welcomeTopic: null,
+    siteName: '',
+    rootDe: null,
+    rootEn: null,
     listMode: { lang: getStoredLang() },
     status: 'idle',
+    settingsStatus: 'idle',
     error: null,
   },
   reducers: {},
@@ -52,10 +73,31 @@ const sectionsSlice = createSlice({
         state.status = 'succeeded';
         state.items = action.payload.sections;
         state.listMode = action.payload.listMode;
+        if (action.payload.siteName != null) {
+          state.siteName = action.payload.siteName;
+        }
+        if (!action.payload.listMode.all) {
+          state.welcomeTopic = action.payload.welcomeTopic ?? null;
+        }
       })
       .addCase(fetchSections.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
+      })
+      .addCase(fetchSettings.fulfilled, (state, action) => {
+        state.settingsStatus = 'succeeded';
+        if (action.payload.siteName != null) {
+          state.siteName = action.payload.siteName;
+        }
+        state.rootDe = action.payload.rootDe || null;
+        state.rootEn = action.payload.rootEn || null;
+      })
+      .addCase(updateSettings.fulfilled, (state, action) => {
+        if (action.payload.siteName != null) {
+          state.siteName = action.payload.siteName;
+        }
+        state.rootDe = action.payload.rootDe || null;
+        state.rootEn = action.payload.rootEn || null;
       })
       .addCase(createSection.fulfilled, (state, action) => {
         const section = action.payload;

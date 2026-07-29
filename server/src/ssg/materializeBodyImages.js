@@ -124,7 +124,7 @@ export async function materializeStateBodyImages(distDir, preloadedState) {
 
   let count = 0;
 
-  // Only topic detail + posts — section topic lists omit bodyHtml in SSG.
+  // Topic detail + posts, and homepage pinned thread embeds.
 
   const topic = preloadedState.topics?.current;
   if (topic?.bodyHtml) {
@@ -143,6 +143,23 @@ export async function materializeStateBodyImages(distDir, preloadedState) {
       count += countMaterialized(before, post.bodyHtml);
     }
   }
+
+  for (const section of preloadedState.sections?.items || []) {
+    for (const pinned of section.highlights?.pinned || []) {
+      if (!pinned?.bodyHtml) continue;
+      const before = pinned.bodyHtml;
+      pinned.bodyHtml = await materializeDataImagesInHtml(distDir, pinned.bodyHtml);
+      count += countMaterialized(before, pinned.bodyHtml);
+    }
+  }
+
+  const welcome = preloadedState.sections?.welcomeTopic;
+  if (welcome?.bodyHtml) {
+    const before = welcome.bodyHtml;
+    welcome.bodyHtml = await materializeDataImagesInHtml(distDir, welcome.bodyHtml);
+    count += countMaterialized(before, welcome.bodyHtml);
+  }
+
   return count;
 }
 

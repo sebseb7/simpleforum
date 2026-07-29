@@ -68,6 +68,7 @@ export function openDatabase(databasePath) {
 
   const schema = fs.readFileSync(path.join(sqlDir, 'schema.sql'), 'utf8');
   db.exec(schema);
+  migrateSchema(db);
 
   // Playwright uses empty isolated DBs; skip demo content there.
   if (!process.env.E2E_AUTH_SECRET) {
@@ -81,7 +82,37 @@ export function openDatabase(databasePath) {
     topics: prepareQueryFile(db, 'topics.sql'),
     posts: prepareQueryFile(db, 'posts.sql'),
     stars: prepareQueryFile(db, 'stars.sql'),
+    settings: prepareQueryFile(db, 'settings.sql'),
+    rootTopics: prepareQueryFile(db, 'rootTopics.sql'),
   };
+}
+
+function migrateSchema(db) {
+  const topicCols = new Set(
+    db.prepare('PRAGMA table_info(topics)').all().map((c) => c.name),
+  );
+  if (!topicCols.has('is_pinned')) {
+    db.exec(
+      'ALTER TABLE topics ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0',
+    );
+  }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS site_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    )
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS root_topics (
+      lang TEXT PRIMARY KEY CHECK (lang IN ('en', 'de')),
+      title TEXT NOT NULL DEFAULT '',
+      body_html TEXT NOT NULL DEFAULT '',
+      author_id INTEGER REFERENCES users(id),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  // Drop legacy slug-based welcome settings (content now lives in root_topics).
+  db.prepare("DELETE FROM site_settings WHERE key IN ('welcome_topic_de', 'welcome_topic_en')").run();
 }
 
 function seedInitialContent(db) {
